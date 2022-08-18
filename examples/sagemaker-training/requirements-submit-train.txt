@@ -1,0 +1,12 @@
+loguru
+sagemaker
+
+# To submit SageMaker training job.
+git+https://github.com/aws-samples/amazon-sagemaker-entrypoint-utilities@main#egg=smepu
+
+# Provide S3Path. Need to fix aiobotocore and botocore versions to avoid crash.
+# - https://github.com/fsspec/s3fs/blob/3e9b7d4a62f6efb3d282d9ded2baf4625fab0515/requirements.txt
+# - https://github.com/aio-libs/aiobotocore/blob/2.3.2/setup.py
+s3fs~=2022.5.0
+aiobotocore~=2.3.0
+botocore>=1.24.21,<1.24.22

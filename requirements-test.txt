@@ -1,0 +1,10 @@
+pytest
+pytest-cov
+pytest-sphinx
+safety
+pytest-lazy-fixture
+pytest-console-scripts
+
+# Parallelize tests: pytest -n 8 (or -n auto).
+# Use judiciously. MBP M1 gains speed-up, but CI/CD slows down.
+pytest-xdist

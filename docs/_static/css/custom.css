@@ -1,0 +1,23 @@
+/**
+ * https://stackoverflow.com/a/68191214
+ *
+ * Wrap the description column in autosummary tables.
+ * Not needed for pydata theme.
+ * Uncomment for other theme (e.g., rtd) to enable this capability.
+*/
+/*
+.wy-table-responsive table td,
+.wy-table-responsive table th {
+    white-space: inherit;
+}
+*/
+
+/* https://stackoverflow.com/a/67414490 */
+.hidden {
+    display: none;
+}
+
+/* Give a bit more space after collapsible's label */
+details[open] summary {
+    margin-bottom: 0.5em;
+}

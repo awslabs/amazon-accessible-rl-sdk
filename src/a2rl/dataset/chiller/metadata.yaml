@@ -1,0 +1,16 @@
+states:
+  - condenser_inlet_temp
+  - evaporator_heat_load_rt
+
+actions:
+  - staging
+
+rewards:
+  - system_power_consumption
+
+forced_categories:
+  - staging
+
+frequency: H
+
+tags: {}

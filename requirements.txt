@@ -1,0 +1,20 @@
+pandas
+numpy
+scikit-learn
+scipy
+matplotlib
+torch
+tqdm>=4.24.0
+PyYaml>=5.1
+typing_extensions
+typeguard
+nptyping
+loguru
+gym>=0.23.1
+stable_baselines3
+seaborn
+cloudpickle
+pytorch-lightning>=1.5.0
+
+# Sample gyms -- https://github.com/openai/gym/issues/2781
+pygame

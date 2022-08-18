@@ -1,0 +1,9 @@
+train_config:
+  epochs: 5
+  batch_size: 512
+  embedding_dim: 512
+  gpt_n_layer: 1
+  gpt_n_head: 1
+  learning_rate: 6e-4
+  num_workers: 0
+  lr_decay: True

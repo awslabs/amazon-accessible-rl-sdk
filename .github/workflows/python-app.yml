@@ -1,0 +1,198 @@
+# This workflow will install Python dependencies, run tests and lint with a single version of Python
+# For more information see: https://help.github.com/actions/language-and-framework-guides/using-python-with-github-actions
+
+name: Python application
+
+on:
+  push:
+    branches: ["main"]
+  pull_request:
+    branches: ["main"]
+
+permissions:
+  contents: read
+
+jobs:
+  s3:
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: read
+    steps:
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-region: us-east-1
+          role-to-assume: ${{ secrets.AWS_ROLE_TO_ASSUME }}
+          role-session-name: MySessionName
+      - run: aws s3 sync s3://a2rl-us-east-1/loon_dataset/ notebooks/loon/
+      - name: Cache examples input data
+        uses: actions/cache@v3
+        with:
+          path: notebooks/loon/
+          key: example-input-data
+
+  build:
+    needs: s3
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Set up Python 3.10
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.10"
+      - uses: actions/cache@v3
+        with:
+          path: notebooks/loon/
+          key: example-input-data
+      - name: Install wheel dependencies
+        run: |
+          python -m pip install --upgrade pip setuptools
+          pip install -r requirements-build.txt
+      - name: Build wheel
+        run: |
+          python -m build --wheel --no-isolation
+      - name: Validate wheel
+        run: |
+          pip install dist/*.whl
+          python -c '
+          import a2rl as wi
+          p = wi.sample_dataset_path("chiller")
+          print(p)
+          assert str(p).endswith("site-packages/a2rl/dataset/chiller")
+          print(wi.read_csv_dataset(p).head(3))
+          '
+      - name: Setup npm
+        uses: actions/setup-node@v3
+        with:
+          node-version: "lts/*"
+      - name: Add npm modules to PATH
+        run: echo "${PWD}/node_modules/.bin" >> $GITHUB_PATH
+      - name: Install docs dependencies
+        run: |
+          pip install -r requirements-docs.txt
+          sudo apt-get update
+          sudo apt install --yes pandoc
+          npm install @mermaid-js/mermaid-cli
+      - name: Build docs
+        env:
+          SPHINX_MERMAID_NO_SANDBOX: 1
+          NOTEBOOK_FAST_RUN: 1
+          NBCONVERT_DISABLE_CONFIG_EXPORTERS: 1
+        run: |
+          cd docs
+          make html
+          cd ..
+      - name: Archive wheel
+        uses: actions/upload-artifact@v3
+        with:
+          name: wheel
+          path: dist/*.whl
+      - name: Archive docs
+        uses: actions/upload-artifact@v3
+        with:
+          name: docs
+          path: docs/_build/html/
+
+  publish-docs:
+    runs-on: ubuntu-latest
+    needs: build
+    environment:
+      name: github-pages
+      url: ${{steps.deployment.outputs.page_url}}
+    if: github.ref == 'refs/heads/main'
+    steps:
+      - uses: actions/download-artifact@v3
+        with:
+          name: docs
+          path: .
+      - uses: actions/configure-pages@v1
+      - uses: actions/upload-pages-artifact@v1
+        with:
+          path: .
+      - uses: actions/deploy-pages@v1
+
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Set up Python 3.10
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.10"
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip setuptools
+          pip install -e .
+      - uses: isort/isort-action@master
+      - uses: psf/black@stable
+        with:
+          options: "-t py38 --check"
+      - name: Check with flake8
+        run: |
+          pip install flake8
+          flake8 .
+      - name: Check with bandit
+        run: |
+          pip install bandit
+          bandit --ini tox.ini --recursive .
+      - name: Check with mypy
+        run: |
+          pip install mypy
+          echo "See https://pandas.pydata.org/docs/dev/development/contributing_codebase.html#testing-type-hints-in-code-using-pandas"
+          python -c "import pandas; import pathlib; (pathlib.Path(pandas.__path__[0]) / 'py.typed').touch()"
+          mypy --install-types --non-interactive --config-file tox.ini .
+
+  gitleaks:
+    runs-on: ubuntu-latest
+    container:
+      image: zricethezav/gitleaks:v8.10.3
+      options: --user root
+    steps:
+      - uses: actions/checkout@v3
+      - name: Run Gitleaks
+        run: |
+          gitleaks detect --redact --no-git --source .
+
+  test:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
+    strategy:
+      matrix:
+        python-version: ["3.8", "3.9", "3.10"]
+    steps:
+      - uses: actions/checkout@v3
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip setuptools
+          pip install -r <(cat requirements.txt requirements-test.txt)
+          pip install tensorboard  # To cover a2rl warning silencer
+          pip install -e .
+      - name: Test with pytest
+        run: |
+          pytest \
+              --cov=a2rl \
+              --junitxml=pytest-py-${{ matrix.python-version }}.xml \
+              --cov-report=term-missing:skip-covered \
+              | tee pytest-coverage-py-${{ matrix.python-version }}.txt
+          coverage html -d htmlcov-py-${{ matrix.python-version }}
+      # Coverage reports only for the latest python
+      - name: Pytest coverage comment
+        uses: MishaKav/pytest-coverage-comment@main
+        if: (github.event_name == 'pull_request') && (matrix.python-version == '3.10')
+        with:
+          pytest-coverage-path: ./pytest-coverage-py-${{ matrix.python-version }}.txt
+          junitxml-path: ./pytest-py-${{ matrix.python-version }}.xml
+      - name: Archive coverage html reports
+        uses: actions/upload-artifact@v3
+        if: (github.event_name == 'pull_request') && (matrix.python-version == '3.10')
+        with:
+          name: htmlcov
+          path: |
+            htmlcov-py-${{ matrix.python-version }}

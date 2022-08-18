@@ -1,0 +1,20 @@
+states:
+  - outside_humidity
+  - outside_temperature
+  - return_humidity
+  - return_temperature
+
+actions:
+  - economizer_enthalpy_setpoint
+  - economizer_temperature_setpoint
+
+rewards:
+  - power
+
+forced_categories:
+  - economizer_enthalpy_setpoint
+  - economizer_temperature_setpoint
+
+frequency: H
+
+tags: {}
