@@ -184,51 +184,24 @@ def plot_information(data, lags: int = 10) -> Axes:
     return sns.heatmap(res, cmap="RdYlGn", linewidths=0.5, vmin=0, vmax=1)
 
 
-def entropy(Y: np.ndarray, trial_space: np.ndarray = None) -> float:
-    """The normalised `entropy <https://en.wikipedia.org/wiki/Entropy_(information_theory)>`_ of the input
+def entropy(Y: np.ndarray) -> float:
+    """The `entropy <https://en.wikipedia.org/wiki/Entropy_(information_theory)>`_ of the input
     series.
 
     Args:
         Y: tokenized input 1D array.
-        trial_space: full set of trials leading
 
     Returns:
-        The entropy normalized by the number of of trials in the token space
+        The entropy
     """
 
-    if trial_space is None:
-        n_tokens = len(Y)
-        if n_tokens <= 1:
-            return 0
+    unique, count = np.unique(Y.astype("<U22"), return_counts=True, axis=0)
+    prob = count / len(Y)
 
-        value,counts = np.unique(Y.astype("<U22"), return_counts=True)
-        probs = counts / n_tokens
+    en = np.sum((-1) * prob * np.log2(prob))
 
-        n_classes = np.count_nonzero(probs)
-        if n_classes <= 1:
-            return 0
+    return en
 
-        ent = 0.
-        for i in probs:
-            ent -= i * np.log2(i)
-        
-        return ent / np.log2(n_classes)
-
-    else:
-        n_tokens = len(trial_space)
-        if n_tokens <= 1:
-            return 0
-
-        value,counts = np.unique(Y.astype("<U22"), return_counts=True)
-        probs = counts / n_tokens
-        n_classes = np.count_nonzero(probs)
-        if n_classes <= 1:
-            return 0
-
-        ent = 0.
-        for i in probs:
-            ent -= i * np.log2(i)
-        return ent / np.log2(n_classes)
 
 
 def tokenize(df: wi.WiDataFrame) -> np.ndarray:
@@ -285,31 +258,46 @@ def conditional_entropy(Y: np.ndarray, X: np.ndarray) -> float:
     z = np.vstack((X, Y)).T
     z = z[z[:, 0].argsort()]
     groups = np.split(z[:, 1], np.unique(z[:, 0], return_index=True)[1][1:])
-    entropies = np.array([entropy(g, trial_space=Y) for g in groups])
+    entropies = np.array([entropy(g) for g in groups])
     values, counts = np.unique(z[:, 0], return_counts=True)
     probs = counts / np.sum(counts)
     return np.sum(probs * entropies)
 
 
-def better_than_random(Y: np.ndarray, X: np.ndarray, baseline: float = 0.5) -> bool:
+def better_than_random(
+    Y: np.ndarray,
+    X: np.ndarray,
+    samples: int = 10,
+    threshold: float = 5,
+) -> bool:
     """Tests if the `information gain <https://en.wikipedia.org/wiki/Entropy_(information_theory)>`_
     of the input series given a conditioning series H(Y|X) is better than random.
 
     Args:
         Y: tokenized input 1D array. The entropy is calculated on this series.
         X: tokenized input 1D array. The conditioning array
-        baseline: minimum amount of information gain for the ``Y`` array to be considered
-            non-random.
 
     Returns:
         A True/False indicating whether information is exchanged between X and Y
 
         True means that it is random, False means that there is information exchanged
     """
-    return information_gain(Y, X) > baseline
+
+    target = conditional_entropy(Y, X)
+    random_entropy_series = np.asarray(
+        [conditional_entropy(np.random.permutation(Y), X) for i in range(samples)], dtype=np.float32
+    )
+
+    # calculate z score,
+    z = (np.mean(random_entropy_series) - target) / (np.std(random_entropy_series))
+
+    # Is the z score "threshold" standard deviations from the mean.
+    return bool(abs(z) < threshold)
 
 
-def information_gain(Y: np.ndarray, X: np.ndarray) -> float:
+
+
+def information_gain(Y: np.ndarray, X: np.ndarray, samples: int = 10) -> float:
     """Calculate the `information gain
     <https://en.wikipedia.org/wiki/Entropy_(information_theory)>`_ of the input series given a
     conditioning series H(Y|X).
@@ -321,7 +309,13 @@ def information_gain(Y: np.ndarray, X: np.ndarray) -> float:
     Returns:
         The entropy minus a random baseline
     """
-    return entropy(Y) - conditional_entropy(Y, X)
+    target = conditional_entropy(Y, X)
+    random_entropy_series = np.asarray(
+        [conditional_entropy(np.random.permutation(Y), X) for i in range(samples)], dtype=np.float32
+    )
+
+    return float(np.mean(random_entropy_series) - target)
+
 
 
 def reward_function(df: wi.WiDataFrame, lag: int, mask: bool = False) -> float:
