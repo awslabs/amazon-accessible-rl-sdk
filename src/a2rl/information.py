@@ -72,8 +72,7 @@ def entropy(Y: np.ndarray, token_space: np.ndarray = None) -> float:
         return ent / np.log2(n_classes)
 
 
-
-def classic_information_gain(X: np.ndarray, A: np.ndarray, normalization: str, baseline: float) -> tuple(float, bool):
+def classic_information_gain(X: np.ndarray, A: np.ndarray, baseline: float) -> tuple(float, bool):
     """ Uses Shannons entropy formula to calculate the information gain.
     
     Args:
@@ -82,11 +81,93 @@ def classic_information_gain(X: np.ndarray, A: np.ndarray, normalization: str, b
 
     Returns:
         (information gain, test passed)
+        test passed is True if the information gain is above the baseline.
     """
 
-    if normalization == '':
+    z = np.vstack((A, X)).T
+    z = z[z[:, 0].argsort()]
+    groups = np.split(z[:, 1], np.unique(z[:, 0], return_index=True)[1][1:])
 
+    values, counts = np.unique(z[:, 0], return_counts=True)
+    #entropies = np.array([entropy(g, token_space=X) for g in groups])
 
+    entropies = np.array([entropy(g) for g in groups])
+        
+    probs = counts / np.sum(counts)
+
+    _infomation_gained = entropy(X) - np.sum(probs * entropies)
+    _test_passed = _infomation_gained > baseline
+
+    return (_infomation_gained, _test_passed)
+
+def normalised_information_gain(X: np.ndarray, A: np.ndarray, baseline: float) -> tuple(float, bool):
+    """ Uses Shannons entropy formula to calculate the information gain but normalizes it by the len of A
+    
+    Args:
+        X: tokenized input 1D array.
+        A: Conditioning 1D groupby for X
+
+    Returns:
+        (information gain, test passed)
+        test passed is True if the information gain is above the baseline.
+    """
+
+    z = np.vstack((A, X)).T
+    z = z[z[:, 0].argsort()]
+    groups = np.split(z[:, 1], np.unique(z[:, 0], return_index=True)[1][1:])
+
+    values, counts = np.unique(z[:, 0], return_counts=True)
+    entropies = np.array([entropy(g, token_space=A) for g in groups])
+        
+    probs = counts / np.sum(counts)
+
+    _infomation_gained = entropy(X) - np.sum(probs * entropies)
+    _test_passed = _infomation_gained > baseline
+
+    return (_infomation_gained, _test_passed)
+
+def group_entropies(X: np.ndarray, A: np.ndarray) -> np.ndarray:
+    """ Return an array of the entropies of the group split up by A
+    
+    Args:
+        X: tokenized input 1D array.
+        A: Conditioning 1D groupby for X
+
+    Returns:
+        The array of entropies of the group
+    """
+
+    z = np.vstack((A, X)).T
+    z = z[z[:, 0].argsort()]
+    groups = np.split(z[:, 1], np.unique(z[:, 0], return_index=True)[1][1:])
+    
+    entropies = np.array([entropy(g, token_space=A) for g in groups])
+    
+    return entropies
+
+def placebo_action(X: np.ndarray, A: np.ndarray) -> tuple(float, bool):
+    """ Tests if there is a statistical difference between the entropies of the original H(X|A)
+    versus H(X|shuffled(A)) which destroys the structure.
+
+    We just shuffle A to keep the same number of groups and then run a T-test
+    
+    Args:
+        X: tokenized input 1D array.
+        A: Conditioning 1D groupby for X
+
+    Returns:
+        (information gain, test passed)
+        test passed is True if the information gain if the T-test works
+    """
+    # We permute the conditioning variable 
+
+    original = group_entropies(X, A)
+    destroyed_structure = group_entropies(X,np.random.permutation(A))
+
+    _infomation_gained = np.mean(destroyed_structure) - np.mean(original)
+    _test_passed = AB_test(original,destroyed_structure)
+
+    return (_infomation_gained, _test_passed)
 
 
 def conditional_information_test(X: np.ndarray, A: np.ndarray, method: str) -> tuple(float, bool):
@@ -100,8 +181,15 @@ def conditional_information_test(X: np.ndarray, A: np.ndarray, method: str) -> t
     Returns:
         The information gain and result of statistical test
     """
+    if method == 'norm':
 
+        return normalised_information_gain(X,A, 0.5)
 
-    return information_gain, test_passed
+    elif method == 'placebo':
+        
+        return placebo_action(X,A)
+
+    else:
+        return classic_information_gain(X,A)
 
 
