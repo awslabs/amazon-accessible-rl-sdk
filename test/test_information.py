@@ -27,11 +27,17 @@ high_entropy_token_set = np.arange(len(low_entropy_token_set))
 def test_random_walk():
     state_changes = np.random.choice([-1,1], 100, p=[0.5, 0.5])
     random_walk = np.cumsum(state_changes)
-    Y = random_walk[1:]
-    X = random_walk[:-1]
-    assert len(Y) == len(X)
-    test_gain(Y, X)
-    test_gain(Y, X, state_space=True)
+    X = random_walk[1:]
+    A = random_walk[:-1]
+    assert len(X) == len(A)
+
+    gain, passed = conditional_information_test(X, A, method ='placebo')
+    assert passed
+
+    gain, passed = conditional_information_test(state_changes, state_changes, method ='placebo')
+    assert not passed
+
+    
 
 
 """
