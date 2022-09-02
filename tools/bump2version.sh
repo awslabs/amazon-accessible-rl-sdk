@@ -19,7 +19,7 @@
 # NOTE: add --allow-dirty when testing on dirty repo
 
 # 1. Release: x.y.z-dev => x.y.z
-bump2version release --commit --tag-name 'v{new_version}'
+bump2version release --commit --tag --tag-name 'v{new_version}'
 
 # 2. Increase: x.y.z-dev => x'.y'.z'-dev
 bump2version major|minor|patch
