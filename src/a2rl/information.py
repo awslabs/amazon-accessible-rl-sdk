@@ -76,7 +76,7 @@ def entropy(Y: np.ndarray, token_space: np.ndarray = None) -> float:
         return ent / np.log2(n_classes)
 
 
-def classic_information_gain(X: np.ndarray, A: np.ndarray, baseline: float) -> tuple(float, bool):
+def classic_information_gain(X: np.ndarray, A: np.ndarray, baseline: float):
     """ Uses Shannons entropy formula to calculate the information gain.
     
     Args:
@@ -104,7 +104,7 @@ def classic_information_gain(X: np.ndarray, A: np.ndarray, baseline: float) -> t
 
     return (_infomation_gained, _test_passed)
 
-def normalised_information_gain(X: np.ndarray, A: np.ndarray, baseline: float) -> tuple(float, bool):
+def normalised_information_gain(X: np.ndarray, A: np.ndarray, baseline: float):
     """ Uses Shannons entropy formula to calculate the information gain but normalizes it by the len of A
     
     Args:
@@ -128,7 +128,7 @@ def normalised_information_gain(X: np.ndarray, A: np.ndarray, baseline: float) -
     _infomation_gained = entropy(X) - np.sum(probs * entropies)
     _test_passed = _infomation_gained > baseline
 
-    return (_infomation_gained, _test_passed)
+    return _infomation_gained, _test_passed
 
 def group_entropies(X: np.ndarray, A: np.ndarray) -> np.ndarray:
     """ Return an array of the entropies of the group split up by A
@@ -171,10 +171,10 @@ def placebo_action(X: np.ndarray, A: np.ndarray) -> tuple(float, bool):
     _infomation_gained = np.mean(destroyed_structure) - np.mean(original)
     _test_passed = AB_test(original,destroyed_structure)
 
-    return (_infomation_gained, _test_passed)
+    return _infomation_gained, _test_passed
 
 
-def conditional_information_test(X: np.ndarray, A: np.ndarray, method: str) -> tuple(float, bool):
+def conditional_information_test(X: np.ndarray, A: np.ndarray, method: str):
     """Uses different methods to calculate the information gained on series X from knowing the conditioning
     series Y
 

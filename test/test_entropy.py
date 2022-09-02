@@ -14,7 +14,9 @@ import numpy as np
 import pytest
 
 import a2rl as wi
-from a2rl.utils import NotMDPDataError, assert_mdp, conditional_entropy, entropy
+#from a2rl.utils import NotMDPDataError, assert_mdp #, conditional_entropy, entropy
+from a2rl.information import *
+
 
 low_entropy_token_set = np.array([1, 3, 5, 2, 3, 5, 3, 2, 1, 3, 4, 5, 1, 1, 2, 3, 4])
 related_entropy_token_set = np.diff(np.hstack((0, low_entropy_token_set)))
@@ -22,7 +24,7 @@ unrelated_entropy_token_set = np.random.randint(1, 5, size=len(low_entropy_token
 high_entropy_token_set = np.arange(len(low_entropy_token_set))
 
 
-
+"""
 def test_base_entropy():
     assert entropy(low_entropy_token_set) < entropy(high_entropy_token_set)
     assert conditional_entropy(
@@ -66,3 +68,4 @@ def test_assert_mdp():
             assert_mdp(df_tok, lags=2)
         except NotMDPDataError:
             pass
+"""
