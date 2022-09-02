@@ -27,11 +27,15 @@ def AB_test(test: np.ndarray, control: np.ndarray, confidence: float=0.95, h0=0)
 
 def entropy(Y: np.ndarray, token_space: np.ndarray = None) -> float:
     """The `entropy <https://en.wikipedia.org/wiki/Entropy_(information_theory)>`_ of the input
-    series. Normalizes for the number of coditioning tokens
+    series. 
+    
+    Credit:@Dashora7
+    token_space: boolean. This determines whether to use the probability of correct prediction rather than entropy in the splits. 
+    This essentially alters the calculation by normalizing by the total number of elements.
 
     Args:
         Y: tokenized input 1D array.
-        token_space: full set of potential tokens that Y can take
+        token_space: set of splitting tokens of Y
 
     Returns:
         The normalized entropy or efficiency of Y
