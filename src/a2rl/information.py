@@ -149,7 +149,7 @@ def group_entropies(X: np.ndarray, A: np.ndarray) -> np.ndarray:
     
     return entropies
 
-def placebo_action(X: np.ndarray, A: np.ndarray) -> tuple(float, bool):
+def placebo_action(X: np.ndarray, A: np.ndarray):
     """ Tests if there is a statistical difference between the entropies of the original H(X|A)
     versus H(X|shuffled(A)) which destroys the structure.
 

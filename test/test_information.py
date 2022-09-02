@@ -24,6 +24,16 @@ unrelated_entropy_token_set = np.random.randint(1, 5, size=len(low_entropy_token
 high_entropy_token_set = np.arange(len(low_entropy_token_set))
 
 
+def test_random_walk():
+    state_changes = np.random.choice([-1,1], 100, p=[0.5, 0.5])
+    random_walk = np.cumsum(state_changes)
+    Y = random_walk[1:]
+    X = random_walk[:-1]
+    assert len(Y) == len(X)
+    test_gain(Y, X)
+    test_gain(Y, X, state_space=True)
+
+
 """
 def test_base_entropy():
     assert entropy(low_entropy_token_set) < entropy(high_entropy_token_set)
