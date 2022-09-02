@@ -194,6 +194,6 @@ def conditional_information_test(X: np.ndarray, A: np.ndarray, method: str):
         return placebo_action(X,A)
 
     else:
-        return classic_information_gain(X,A)
+        return classic_information_gain(X,A, 0.5)
 
 

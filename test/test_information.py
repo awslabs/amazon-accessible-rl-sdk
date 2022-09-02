@@ -18,11 +18,6 @@ import a2rl as wi
 from a2rl.information import *
 
 
-low_entropy_token_set = np.array([1, 3, 5, 2, 3, 5, 3, 2, 1, 3, 4, 5, 1, 1, 2, 3, 4])
-related_entropy_token_set = np.diff(np.hstack((0, low_entropy_token_set)))
-unrelated_entropy_token_set = np.random.randint(1, 5, size=len(low_entropy_token_set))
-high_entropy_token_set = np.arange(len(low_entropy_token_set))
-
 
 def test_random_walk():
     state_changes = np.random.choice([-1,1], 100, p=[0.5, 0.5])
@@ -37,7 +32,19 @@ def test_random_walk():
     gain, passed = conditional_information_test(state_changes, state_changes, method ='placebo')
     assert not passed
 
+def test_related_series():
     
+    low_entropy_token_set = np.random.randint(1, 5, size=100)
+    related_entropy_token_set = np.diff(np.hstack((0, low_entropy_token_set)))
+
+    gain, passed = conditional_information_test(related_entropy_token_set, low_entropy_token_set, method ='placebo')
+    print(gain)
+    assert passed
+
+    gain, passed = conditional_information_test(low_entropy_token_set, low_entropy_token_set, method ='placebo')
+    print(gain)
+    assert not passed
+
 
 
 """
