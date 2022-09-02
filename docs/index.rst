@@ -227,7 +227,7 @@ the formulation.
 
     # Get recommended actions given an input context (s,a,r,v,...s).
     # Context must end with states, and its members must be tokenized.
-    custom_context = simulator.tokenizer.self.df_tokenized.sequence[:7]
+    custom_context = simulator.tokenizer.df_tokenized.sequence[:7]
     recommendation_df = simulator.sample(custom_context, 3)
 
     # Show recommendations (i.e., trajectory)
