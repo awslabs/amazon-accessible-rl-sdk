@@ -9,20 +9,21 @@ Utility functions.
     :toctree: api/
     :nosignatures:
 
-    entropy
-    tokenize
-    conditional_entropy
-    better_than_random
-    information_gain
-    reward_function
-    stationary_policy
-    is_markovian
-    action_reward
     action_effective
+    action_reward
+    backtest
+    better_than_random
+    conditional_entropy
+    data_generator_gym
+    data_generator_simple
+    entropy
+    force_assert
+    information_gain
+    is_markovian
     markovian_matrix
     normalized_markovian_matrix
-    data_generator_simple
-    data_generator_gym
-    backtest
+    plot_information
+    reward_function
     set_seed
-    force_assert
+    stationary_policy
+    tokenize
