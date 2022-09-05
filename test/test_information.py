@@ -17,33 +17,60 @@ import a2rl as wi
 #from a2rl.utils import NotMDPDataError, assert_mdp #, conditional_entropy, entropy
 from a2rl.information import *
 
+method = 'placebo-norm'
 
 
 def test_random_walk():
-    state_changes = np.random.choice([-1,1], 100, p=[0.5, 0.5])
+    """Information must be exchanged between the previous state and the next state from the
+    definition of a first order Markov Chain
+    """
+    state_changes = np.random.choice([-1,1], 1000, p=[0.5, 0.5])
     random_walk = np.cumsum(state_changes)
     X = random_walk[1:]
     A = random_walk[:-1]
     assert len(X) == len(A)
 
-    gain, passed = conditional_information_test(X, A, method ='placebo')
+    gain, passed = conditional_information_test(X, A, method =method)
     assert passed
 
-    gain, passed = conditional_information_test(state_changes, state_changes, method ='placebo')
+def test_random_walk_no_information():
+    """
+    No information exchanged between two random series
+    """
+    state_changes = np.random.choice([-1,1], 1000, p=[0.5, 0.5])
+
+    gain, passed = conditional_information_test(state_changes, state_changes, method =method)
     assert not passed
 
-def test_related_series():
+def test_related_series_difference():
     
-    low_entropy_token_set = np.random.randint(1, 5, size=100)
+    low_entropy_token_set = np.random.randint(1, 10, size=1000)
     related_entropy_token_set = np.diff(np.hstack((0, low_entropy_token_set)))
 
-    gain, passed = conditional_information_test(related_entropy_token_set, low_entropy_token_set, method ='placebo')
+    gain, passed = conditional_information_test(low_entropy_token_set,related_entropy_token_set, method =method)
     print(gain)
     assert passed
 
-    gain, passed = conditional_information_test(low_entropy_token_set, low_entropy_token_set, method ='placebo')
+def test_related_series_sum():
+    
+    low_entropy_token_set = np.random.randint(1, 10, size=1000)
+    related_entropy_token_set = low_entropy_token_set + 2
+
+    gain, passed = conditional_information_test(low_entropy_token_set,related_entropy_token_set, method =method)
+    print(gain)
+    assert passed
+
+
+def test_unrelated_series():
+    
+    low_entropy_token_set = np.random.randint(1, 5, size=100)
+    unrelated_low_entropy_token_set = np.random.randint(1, 5, size=100)
+
+
+    gain, passed = conditional_information_test(low_entropy_token_set, unrelated_low_entropy_token_set, method =method)
     print(gain)
     assert not passed
+
 
 
 
