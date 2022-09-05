@@ -2,16 +2,22 @@
 Welcome to Amazon Accessible RL
 ===============================
 
-Amazon Accessible RL (A2RL) provides everything a data scientist needs to develop a solution to a `sequential
-decision making problem <https://en.wikipedia.org/wiki/Sequential_decision_making>`_ working on time
-series data. It guides the data scientist through problem formulation,
-:doc:`initial data analysis <auto-notebooks/data_properties>` to see if a solution is possible,
-train a :doc:`simulator <auto-notebooks/simulator>` (aka *digital twin*) based on the data, and providing
-:doc:`recommended actions <auto-notebooks/planner_byo_example>`
+Amazon Accessible RL (A2RL) provides everything a data scientist needs to develop a solution to a
+`sequential decision making problem <https://en.wikipedia.org/wiki/Sequential_decision_making>`_
+working on time series data.
+
+You can install the stable version A2RL with ``pip``, preferrably to a virtual environment.
+
+.. code-block:: bash
+
+    pip install a2rl
 
 We aim to bring you a low-code package to apply `offline RL
-<https://sites.google.com/view/offlinerltutorial-neurips2020/home>`_ using state-of-the-art
-generative transformer technology -- the same technology behind `GATO
+<https://sites.google.com/view/offlinerltutorial-neurips2020/home>`_, starting from problem
+formulation, :doc:`initial data analysis <auto-notebooks/data_properties>` to see if a solution is
+possible, train a :doc:`simulator <auto-notebooks/simulator>` (aka *digital twin*) based on the
+data, and providing :doc:`recommended actions <auto-notebooks/planner_byo_example>`. At the core of
+A2RL is a state-of-the-art generative transformer -- the same technology behind `GATO
 <https://www.deepmind.com/publications/a-generalist-agent>`_, `trajectory transformer
 <https://trajectory-transformer.github.io/>`_ and `decision transformer
 <https://arxiv.org/abs/2106.01345>`_.
@@ -212,7 +218,7 @@ the formulation.
     import a2rl as wi
     from a2rl.utils import plot_information
 
-    # Load dataset
+    # Load a sample dataset which contains historical states, actions, and rewards.
     wi_df = wi.read_csv_dataset(wi.sample_dataset_path("chiller")).trim().add_value()
     wi_df = wi_df.iloc[:1000]  # Reduce data size for demo purpose
 
@@ -244,7 +250,6 @@ Contents
 .. toctree::
     :maxdepth: 1
 
-    install
     start_here
     example
     changelog

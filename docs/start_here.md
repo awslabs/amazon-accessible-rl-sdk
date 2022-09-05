@@ -14,7 +14,7 @@ flowchart LR
     subgraph Learning -Step 1
     A[Offline data] -->|Label context, actions <div></div> and rewards| B{Simulator}
     end
-    B <-.->|Whatif API| C(Planner)
+    B <-.->|A2RL API| C(Planner)
 
     subgraph Planning -Step 2
     D[New question to ask] -->|New context| C
@@ -34,7 +34,7 @@ requires you to first train an RL agent (e.g.,
 [PPO](https://paperswithcode.com/method/ppo)) with a simulator, then only the agent can recommend an
 action.
 
-The way `whatif` simulator provides recommendations is different. First, it calculates for you a
+The way A2RL simulator provides recommendations is different. First, it calculates for you a
 [Q-value](https://en.wikipedia.org/wiki/Reinforcement_learning#Value_function) internally when you
 load your data. Then the Simulator is trained with tokenized dataframe's states,
 actions, rewards, and Q-value in row major order flatten sequences. In order to choose an action, you just need to sample multiple one step trajectory based on the current context, and pick the best action (i.e. with best Q-value).
@@ -118,7 +118,7 @@ flowchart LR
     D --> E
 ```
 
-`whatif` offers convenience functions to rapidly qualify the MDP-ness of your data. With these, you
+A2RL offers convenience functions to rapidly qualify the MDP-ness of your data. With these, you
 can rapidly assess your data to make an informed decision whether you're ready to proceed with
 offline RL, or whether you should first look at how to improve your data collection process.
 
@@ -156,7 +156,7 @@ state conditioned on the previous state and actions.
 
  $$P \left( S^{t+1} \, \middle| \, S^{t},A^{t}\right) = P \left( S^{t+1} \, \middle| \, S^{t},A^{t}, S^{t-1},A^{t-1}...\right)$$
 
-Rather than proving this directly, which is actually quite difficult, `whatif` tests for
+Rather than proving this directly, which is actually quite difficult, A2RL tests for
 [information gain](https://en.wikipedia.org/wiki/Entropy_(information_theory)#Use_in_machine_learning)
 between different measurements which is a lot easier to do.
 
@@ -196,7 +196,7 @@ This is important to make sure that our states are influencable and not exogenou
 
 ## Global Simulator
 
-`whatif` puts state of the art Generative Pre-trained Transformer (GPT) networks to work to predict outcomes for sequential tasks.
+A2RL puts state of the art Generative Pre-trained Transformer (GPT) networks to work to predict outcomes for sequential tasks.
 
 Take multiple timeseries and label them are either states, actions, or rewards.
 
@@ -228,9 +228,9 @@ The reward comes from a single column.
 
 ### Expected Returns or Value
 
-A estimation of the value (or expectation of all future returns) is added to the `whatif` data frame
+A estimation of the value (or expectation of all future returns) is added to the A2RL data frame
 after the data is loaded. The [Bellman equations](https://en.wikipedia.org/wiki/Bellman_equation)
-are used to estimate this. `whatif` offers either
+are used to estimate this. A2RL offers either
 [SARSA](https://en.wikipedia.org/wiki/State-action-reward-state-action) which is a conservative on
 policy algorithm, or [Q-Learning](https://en.wikipedia.org/wiki/Q-learning) which is a more
 aggresive off policy value estimate.
@@ -249,7 +249,7 @@ $ Q^{t+1}(s,a) = Q^{t}(s,a) + α[r +  γQ^{t}(s^{next},a^{next})  - Q^{t}(s,a)] 
 
 Data needs be transformed into tokens to work with GPT. Continuous data needs to be converted to quantiles using a quantile discretizer. Categorical data is converted to tokens.
 
-Each column being used is given a unique token range so that there are no collisions. `whatif`
+Each column being used is given a unique token range so that there are no collisions. A2RL
 enforces that the next token be picked from the range that it is expecting.
 
 ```{mermaid}
@@ -287,7 +287,7 @@ Please refer to the [simulator example](auto-notebooks/simulator) to learn more 
 
 ## Problem Formulation
 
-Here is how `whatif` thinks about making decisions. You will get the hang of it.
+Here is how A2RL thinks about making decisions. You will get the hang of it.
 
 ### Example 1: Traveling
 
@@ -325,7 +325,7 @@ Weekend travel (note: `o` denotes the median time):
 These data shows us that if you travelled on the weekday then the plane is the quickest. If you
 travelled on the weekend then driving is quicker.
 
-**So, what could be the travelling problem formulation? To `whatif` this problem can be represented like this.**
+**So, what could be the travelling problem formulation? To A2RL this problem can be represented like this.**
 
 The thing that measures how well we have done is called the reward, which could *time* in this
 example.
@@ -396,7 +396,7 @@ Summer Day:
 | 25               | [cold:100, hot:0]   | 20               | -7                     |
 | 20               | [cold:0, hot:100]   | 30               | -3                     |
 
-**So, what could be the bath problem formulation? To `whatif` this problem can be represented like this.**
+**So, what could be the bath problem formulation? To A2RL this problem can be represented like this.**
 
 The thing that measures how well we have done is called the *reward*. For this example, it was the *difference in the bath temperature to 27 C*. Any number higher or lower would be negative.
 
@@ -422,4 +422,4 @@ flowchart LR
     C -->|cold:100, hot:0| E[Reward]
 ```
 
-Once data is formulated into that format, `whatif` handles the rest.
+Once data is formulated into that format,  A2RL handles the rest.

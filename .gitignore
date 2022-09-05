@@ -22,6 +22,9 @@ node_modules/
 package-lock.json
 package.json
 
+# symlink to CHANGELOG.md
+docs/changelog.md
+
 # Pytorch model
 *.pt
 *.pt[ch]
