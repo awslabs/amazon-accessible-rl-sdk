@@ -1,5 +1,9 @@
 # Changelogs <!-- omit in toc -->
 
-## Placeholder for next release
+## v1.0.1 (2022-08-31)
 
-WIP
+- Updated documentations
+
+## v1.0.0 (2022-08-31)
+
+- Initial release

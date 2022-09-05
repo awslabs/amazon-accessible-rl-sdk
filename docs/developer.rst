@@ -4,25 +4,21 @@ Developer Guide
 We welcome and encourage all kind of help, such as bug reports, bug fixes, documentation
 improvements, enhancements, ideas, marketing and communications, devops, project coordination, etc.
 
-.. important::
+Setup your work environment as follows:
 
-    Unless stated otherwise, all the instructions on this page assumes ``GITROOT/`` as your current
-    directory.
+.. code-block:: bash
 
-Pre-Requisites
---------------
+    git clone https://github.com/awslabs/amazon-accessible-rl-sdk.git
+    # Alternative: git clone git@github.com:awslabs/amazon-accessible-rl-sdk.git
 
-The Python packages required for development is specified in ``requirements*.txt``. Please
-install those dependencies as follows:
+    cd amazon-accessible-rl-sdk
 
-.. code-block::
+    # Perform editable install (preferrably to a virtual environment) so that
+    # changes to the code base will be reflected immediately.
+    pip install -e .
 
-    pip install -r <(cat requirements.txt requirements-*.txt)
-
-
-
-Additional Dependencies
------------------------
+Once the command completes, you'll have a local repository at ``./amazon-accessible-rl-sdk/``.
+Apart from source codes, you should notice these additional requirement files:
 
 ==========================  =============================================
 ``requirements-test.txt``   Required for unit tests
@@ -31,40 +27,27 @@ Additional Dependencies
 ``requirements-dev.txt``    Recommended packages during development.
 ==========================  =============================================
 
-
-Advance Setup
--------------
-
-Perform an editable install so that your changes to the code base will be reflected automatically.
-
-.. code-block:: bash
-
-    git clone git@github.com:awslabs/amazon-accessible-rl-sdk.git
-    cd amazon-accessible-rl-sdk
-    pip install -e .
-
 Hygiene Practice
 ----------------
 
-.. important:: **Insist on the highest standards**
+Although the project repository implements code checks in its CI process, you're still strongly
+recommended to run the checks locally to quickly catch and fix low-hanging-fruit violations.
 
-    Leaders have relentlessly high standards --- many people may think these standards are
-    unreasonably high. Leaders are continually raising the bar and drive their teams to deliver high
-    quality products, services, and processes. Leaders ensure that defects do not get sent down the
-    line and that problems are fixed so they stay fixed.
+Required packages and tools can be installed as:
 
-To ensure high-quality merge requests (MR) and shorten the code-review cycle, you're strongly
-recommended to perform these tasks before creating an MR.
+.. code-block:: bash
 
-Although the project repository also runs the same checks as CI on your MR as a pre-cautionary
-measure, you're still strongly recommended to run these tasks locally to quickly catch and fix
-low-hanging-fruit violations.
+    pip install -r <(cat requirements-*.txt)
 
 Linters
 ~~~~~~~
 
-The code-base comes with a set of git pre-commit hooks listed in the ``.pre-commit-config.yaml``
-file.
+The code-base comes with a set of git `pre-commit <https://pre-commit.com/>`_ hooks listed in the
+``.pre-commit-config.yaml`` file.
+
+.. code-block:: bash
+
+    pre-commit install
 
 Unit Tests
 ~~~~~~~~~~
@@ -72,7 +55,7 @@ Unit Tests
 Unit tests are done using the `pytest <https://docs.pytest.org/en/stable/>`_ framework.
 
 We require that your contributions do not break existing tests. And if you found the existing tests
-are buggy, please contribute your fixes.
+are buggy, please report it or feel free to contribute your fixes.
 
 You should also include new tests whenever it makes sense (and you'd be the one who makes the
 judgement call).
@@ -128,30 +111,12 @@ Type Checks
 
 .. note::
 
-    This project takes a brutally pragmatic stance on
-    `type checks <https://docs.python.org/3/library/typing.html>`_. We acknowledge that type checks
-    is still a relatively new concept (and coding habit), hence not all contributers agree to it or
-    have it build into their muscle memory. More over, we may need to deal with some Python
-    dependencies with varying degree of type checks.
-
-    As such, the continuous integration (CI) still allows MR to fail type checks. Nevertheless,
-    you're still highly recommended to do your best to correctly implement type checks in your
-    code contributions.
-
     If you're new to type checks, we encourage you to learn more about its benefits and how-to on
     `mypy <https://mypy.readthedocs.io/en/stable/>`_ and
     `Python official documentation <https://peps.python.org/pep-0484/>`_.
 
-.. warning::
-
-    Although at present the CI process runs type checks only as an FYI basis, the long-term plan is
-    to make it mandatory.
-
-    As such, we highly recommend that you start to incorporate type checks from now, so you'll be
-    quickly familiarized, and to shorten the code-review cycle by maintainers who, at times, might
-    be a little bit pedantic |:slight_smile:|.
-
-As a pre-requisite, you need to enable type hints on your pandas installations:
+As a pre-requisite, you need to enable type hints on your `pandas <https://pandas.pydata.org>`_
+installations:
 
 .. code-block:: bash
 
