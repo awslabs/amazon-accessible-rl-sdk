@@ -18,41 +18,14 @@ from a2rl.utils import NotMDPDataError, assert_mdp, conditional_entropy, entropy
 
 low_entropy_token_set = np.array([1, 3, 5, 2, 3, 5, 3, 2, 1, 3, 4, 5, 1, 1, 2, 3, 4])
 related_entropy_token_set = np.diff(np.hstack((0, low_entropy_token_set)))
-unrelated_entropy_token_set = np.random.randint(1, 5, size=len(low_entropy_token_set))
 high_entropy_token_set = np.arange(len(low_entropy_token_set))
-
-
-def test_base_entropy_laplace_smoothing():
-    assert entropy(low_entropy_token_set) < entropy(high_entropy_token_set)
-
-    print(f"{conditional_entropy(related_entropy_token_set, unrelated_entropy_token_set)=}")
-    print(f"{entropy(related_entropy_token_set)=}")
-    diff = conditional_entropy(related_entropy_token_set, unrelated_entropy_token_set) - entropy(
-        related_entropy_token_set
-    )
-    print(f"{diff=}")
-    assert abs(diff) < 0.5  # Not adding information, hence delta is fixed to at most half-bit.
 
 
 def test_base_entropy():
     assert entropy(low_entropy_token_set) < entropy(high_entropy_token_set)
-    assert conditional_entropy(
-        related_entropy_token_set,
-        low_entropy_token_set,
-        laplace_smoothing=False,
-    ) < entropy(related_entropy_token_set)
-
-
-def test_base_entropy_no_laplace_smoothing():
-    assert entropy(low_entropy_token_set) < entropy(high_entropy_token_set)
-
-    print(f"{conditional_entropy(related_entropy_token_set, unrelated_entropy_token_set)=}")
-    print(f"{entropy(related_entropy_token_set)=}")
-    diff = conditional_entropy(related_entropy_token_set, unrelated_entropy_token_set) - entropy(
+    assert conditional_entropy(related_entropy_token_set, low_entropy_token_set) < entropy(
         related_entropy_token_set
     )
-    print(f"{diff=}")
-    assert abs(diff) < 0.5  # Not adding information, hence delta is fixed to at most half-bit.
 
 
 @pytest.mark.parametrize(

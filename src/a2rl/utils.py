@@ -91,10 +91,10 @@ def backtest(
     Utility to perform backtesting on simulator.
 
     .. note::
-        By using groundtruth dataset ``df``, take ``context_rows`` number of rows as context,
-        and groundtruth action, predict the next states ``(s1,s2...)`` and rewards ``(r,v)``.
-        Then append the predicted next states and rewards as new context, and repeat the steps again
-        until we get ``predict_rows`` number of new rows.
+    By using groundtruth dataset ``df``, take ``context_rows`` number of rows as context,
+    and groundtruth action, predict the next states ``(s1,s2...)`` and rewards ``(r,v)``.
+    Then append the predicted next states and rewards as new context, and repeat the steps again
+    until we get ``predict_rows`` number of new rows.
 
     Arguments:
         df: WiDataFrame, this is the original dataframe before tokenized.
@@ -140,7 +140,7 @@ def backtest(
         context = new_context
         curr_row_idx += 1
 
-    # Throw away last states
+    # Throw away last row (with only states)
     new_sequence = context[0, : -simulator.tokenizer.state_dim]
     logger.debug(f"{new_sequence.shape=}")
     pred_df = simulator.tokenizer.from_seq_to_dataframe(new_sequence, True)
@@ -242,7 +242,7 @@ def tokenize(df: wi.WiDataFrame) -> np.ndarray:
     )
 
 
-def conditional_entropy(Y: np.ndarray, X: np.ndarray, laplace_smoothing: bool = True) -> float:
+def conditional_entropy(Y: np.ndarray, X: np.ndarray) -> float:
     """The `conditional entropy <https://en.wikipedia.org/wiki/Entropy_(information_theory)>`_ of
     the input series given a conditioning series H(Y|X).
 
@@ -258,33 +258,30 @@ def conditional_entropy(Y: np.ndarray, X: np.ndarray, laplace_smoothing: bool = 
     z = z[z[:, 0].argsort()]
     groups = np.split(z[:, 1], np.unique(z[:, 0], return_index=True)[1][1:])
     values, counts = np.unique(z[:, 0], return_counts=True)
-
-    if laplace_smoothing:
-        token_set = np.unique(Y)
-        entropies = np.array([entropy(np.concatenate([g, token_set])) for g in groups])
-    else:
-        entropies = np.array([entropy(g) for g in groups])
-    # print(entropies)
+    entropies = np.array([entropy(g) for g in groups])
     probs = counts / np.sum(counts)
+
     return np.sum(probs * entropies)
 
 
-def better_than_random(Y: np.ndarray, X: np.ndarray, baseline: float = 0.5) -> bool:
+def better_than_random(Y: np.ndarray, X: np.ndarray) -> bool:
     """Tests if the `information gain <https://en.wikipedia.org/wiki/Entropy_(information_theory)>`_
     of the input series given a conditioning series H(Y|X) is better than random.
 
     Args:
         Y: tokenized input 1D array. The entropy is calculated on this series.
         X: tokenized input 1D array. The conditioning array
-        baseline: minimum amount of information gain for the ``Y`` array to be considered
-            non-random.
 
     Returns:
         A True/False indicating whether information is exchanged between X and Y
-
-        True means that it is random, False means that there is information exchanged
     """
-    return information_gain(Y, X) > baseline
+
+    unique, count = np.unique(Y.astype("<U22"), return_counts=True, axis=0)
+    n_samples = sum(count)
+    baseline = np.exp(-0.00011274353385892151 * n_samples + -3.055148562536953)
+    return (
+        abs(conditional_entropy(Y, np.random.permutation(X)) - conditional_entropy(Y, X)) < baseline
+    )
 
 
 def information_gain(Y: np.ndarray, X: np.ndarray) -> float:
@@ -299,7 +296,8 @@ def information_gain(Y: np.ndarray, X: np.ndarray) -> float:
     Returns:
         The entropy minus a random baseline
     """
-    return entropy(Y) - conditional_entropy(Y, X)
+
+    return conditional_entropy(Y, np.random.permutation(X)) - conditional_entropy(Y, X)
 
 
 def reward_function(df: wi.WiDataFrame, lag: int, mask: bool = False) -> float:
