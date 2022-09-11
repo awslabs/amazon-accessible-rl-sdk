@@ -20,7 +20,6 @@ from typing import Any, Callable, Collection, Iterable, Literal, Protocol
 import gym
 import numpy as np
 import pandas as pd
-from typing_extensions import TypeGuard
 
 import a2rl as wi
 
