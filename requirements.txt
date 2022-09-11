@@ -14,7 +14,6 @@ loguru
 # See: breaking changes in https://github.com/openai/gym/releases/tag/0.26.0
 gym>=0.23.1,<0.26.0
 
-stable_baselines3
 seaborn
 cloudpickle
 pytorch-lightning>=1.5.0

@@ -23,7 +23,7 @@ from gym.spaces import Box
 import a2rl as wi
 
 
-class WhatifWrapperUnderfloor(wi.WhatifWrapper):
+class WhatifWrapperUnderfloor(wi.TransitionRecorder):
     """This is data collector helper class.
 
     When agent is interacting with the env, it will store the states/actions/reward
