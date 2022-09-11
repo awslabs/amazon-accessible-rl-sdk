@@ -18,6 +18,3 @@ stable_baselines3
 seaborn
 cloudpickle
 pytorch-lightning>=1.5.0
-
-# Sample gyms -- https://github.com/openai/gym/issues/2781
-pygame
