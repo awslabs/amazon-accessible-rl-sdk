@@ -21,7 +21,6 @@ ipython
 ipykernel
 ipywidgets
 rich
-jupyterlab-execute-time
 
 # third party package in example
 psychrolib
