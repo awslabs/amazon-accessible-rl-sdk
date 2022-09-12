@@ -7,6 +7,8 @@ mypy
 autoflake
 flake8
 types-PyYAML
+types-tqdm
+types-setuptools
 ipdb
 ipywidgets
 rich

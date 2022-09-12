@@ -147,7 +147,7 @@ jobs:
           pip install mypy
           echo "See https://pandas.pydata.org/docs/dev/development/contributing_codebase.html#testing-type-hints-in-code-using-pandas"
           python -c "import pandas; import pathlib; (pathlib.Path(pandas.__path__[0]) / 'py.typed').touch()"
-          mypy --install-types --non-interactive --config-file tox.ini .
+          mypy --install-types --non-interactive .
 
   gitleaks:
     runs-on: ubuntu-latest

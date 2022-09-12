@@ -127,7 +127,7 @@ Then, run the type checks as follows:
 
 .. code-block:: bash
 
-    mypy --install-types --config-file tox.ini --exclude '^.venv/.*' --exclude '^build/.*' .
+    mypy --install-types .
 
 
 HTML Docs
