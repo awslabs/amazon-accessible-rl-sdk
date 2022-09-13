@@ -115,6 +115,20 @@ def test_add_value(df, sarsa, sar_d):
     }
 
 
+@pytest.mark.parametrize("sarsa", (True, False))
+def test_add_multi_episode_value(df, sarsa, sar_d):
+    expected_cols = df.columns.append(pd.Index(["value"]))
+    actual_cols = df.add_value_for_multi_episode_process(
+        sarsa=sarsa, episode_identifier="episode"
+    ).columns
+    assert np.all(actual_cols == expected_cols)
+    assert df.sar_d == {
+        "states": sar_d["states"],
+        "actions": sar_d["actions"],
+        "rewards": sar_d["rewards"] + ["value"],
+    }
+
+
 def test_add_value_conflict(df):
     with pytest.raises(ValueError, match="Unspecified reward column:"):
         wi.WiDataFrame(df, states=df.states, actions=df.actions).add_value()

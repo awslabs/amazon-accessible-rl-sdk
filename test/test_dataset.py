@@ -88,6 +88,24 @@ def df() -> wi.WiDataFrame:
     )
 
 
+@pytest.fixture
+def df_multi_episode() -> wi.WiDataFrame:
+    return wi.WiDataFrame(
+        {
+            "a": [1, 1, 2, 0, 2, 3],
+            "b": [1, 2, 3, 0, 4, 5],
+            "c": [2, 3, 4, 0, 5, 6],
+            "d": [3, 4, 5, 0, 6, 7],
+            "e": [4, 5, 6, 0, 7, 8],
+            "f": [5, 6, 7, 0, 8, 9],
+            "episode": ["a", "a", "a", 0, "b", "b"],
+        },
+        states=["a", "b"],
+        actions=["c"],
+        rewards=["d"],
+    )
+
+
 @pytest.mark.parametrize(
     "forced_categories,expected_types",
     (
