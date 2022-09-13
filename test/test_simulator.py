@@ -767,8 +767,6 @@ def test_sim_gpt_sample_n_steps_sample_true(
     gpt_token,
     df_dummy_tokenized,
 ):
-    # Verify sample can return different value
-    torch.manual_seed(seed)
     results = sim.gpt_sample_n_steps(gpt_token, 4, start_col_index, sample=True)
     historical_context = results[:-4]
     pred = results[-4:]
