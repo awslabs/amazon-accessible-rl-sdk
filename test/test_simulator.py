@@ -55,6 +55,7 @@ def dummy_data() -> tuple[wi.WiDataFrame, wi.WiDataFrame, wi.WiDataFrame]:
     5  85  90  c  z  100
     """
 
+    # Each row = [S2, S1, R, A2, A1]
     arr_input = [
         [10, 5, 20, "x", "a"],
         [10, 5, 40, "x", "a"],
@@ -63,38 +64,20 @@ def dummy_data() -> tuple[wi.WiDataFrame, wi.WiDataFrame, wi.WiDataFrame]:
         [90, 85, 80, "z", "c"],
         [90, 85, 100, "z", "c"],
     ]
-
-    arr_transformed = [
-        [0, 100, 400, 403, 200, 300],
-        [0, 100, 400, 403, 225, 300],
-        [0, 150, 401, 404, 237, 319],
-        [99, 150, 401, 404, 250, 363],
-        [99, 199, 402, 405, 275, 399],
-        [99, 199, 402, 405, 299, 399],
-    ]
-
-    arr_reconstructed = [
-        [5.4, 10.4, "a", "x", 20.4, 31.171878705498553],
-        [5.4, 10.4, "a", "x", 40.4, 31.171878705498553],
-        [5.4, 50.400000000000006, "b", "y", 50.0, 35.84061543591119],
-        [84.6, 50.400000000000006, "b", "y", 60.400000000000006, 46.65242681160362],
-        [84.6, 89.6, "c", "z", 80.4, 55.498454300806515],
-        [84.6, 89.6, "c", "z", 99.6, 55.498454300806515],
-    ]
+    print(f"{arr_input=}")
 
     sar_d = dict(states=["S1", "S2"], actions=["A1", "A2"], rewards=["R"])
     df_input = wi.WiDataFrame(arr_input, columns=["S2", "S1", "R", "A2", "A1"], **sar_d)
     df_input.add_value()
-    df_transformed = wi.WiDataFrame(
-        arr_transformed,
-        columns=["S1", "S2", "A1", "A2", "R", "value"],
-        **sar_d,
-    )
-    df_reconstructed = wi.WiDataFrame(
-        arr_reconstructed,
-        columns=["S1", "S2", "A1", "A2", "R", "value"],
-        **sar_d,
-    )
+
+    tok = wi.DiscreteTokenizer(num_bins_strategy="uniform").fit(df_input.trim())
+    df_transformed = tok.transform(df_input.trim())
+    df_reconstructed = tok.inverse_transform(df_transformed)
+
+    print(f"{df_input=}")
+    print(f"{df_transformed=}")
+    print(f"{df_reconstructed=}")
+
     return df_input, df_transformed, df_reconstructed
 
 
@@ -111,6 +94,11 @@ def df_dummy_tokenized(dummy_data):
 @pytest.fixture
 def df_dummy(dummy_data):
     return dummy_data[0]
+
+
+@pytest.fixture
+def df_dummy_trimmed(dummy_data):
+    return dummy_data[0].trim()
 
 
 @pytest.fixture(scope="session")
@@ -413,12 +401,10 @@ def test_sim_reset(sim):
         pytest.lazy_fixture("sim_lightgpt"),  # type: ignore[operator]
     ],
 )
-def test_sim_reset_context(sim):
-    # First row of whatif dataframe
-    expected = [5, 10, "a", "x", 20, 31.049017212592958]
-    # In test mode, the starting index is always 0, should map to 1st row of dataframe
-    actual = sim.current_context.iloc[0].values.tolist()
-    assert actual == expected
+def test_sim_reset_context(sim, df_dummy_trimmed):
+    # In test mode, the starting index is always 0, must map to 1st row of dataframe
+    actual = sim.current_context.iloc[0]
+    assert (actual == df_dummy_trimmed.trim().iloc[0]).all()
 
 
 def test_sim_reset_test_mode(autotokenizer_dummy):
@@ -768,28 +754,35 @@ def test_sim_gpt_sample_n_steps(sim, start_col_index, gpt_token_context):
     ],
 )
 @pytest.mark.parametrize(
-    "start_col_index, seed, gpt_token, expected",
+    "start_col_index, seed, gpt_token",
     [
-        (
-            0,
-            99,
-            np.array([0, 1, 15, 18, 5, 11]),
-            np.array([0, 1, 15, 18, 5, 11, 0, 3, 16, 19]),
-        ),
-        (
-            0,
-            10,
-            np.array([0, 1, 15, 18, 5, 11]),
-            np.array([0, 1, 15, 18, 5, 11, 0, 3, 16, 20]),
-        ),
+        (0, 99, np.array([0, 1, 15, 18, 5, 11])),
+        (0, 10, np.array([0, 1, 15, 18, 5, 11])),
     ],
 )
-def test_sim_gpt_sample_n_steps_sample_true(sim, start_col_index, seed, gpt_token, expected):
+def test_sim_gpt_sample_n_steps_sample_true(
+    sim,
+    start_col_index,
+    seed,
+    gpt_token,
+    df_dummy_tokenized,
+):
     # Verify sample can return different value
     torch.manual_seed(seed)
-    pred = sim.gpt_sample_n_steps(gpt_token, 4, start_col_index, sample=True)
-    print(pred)
-    assert np.all(np.equal(pred, expected))
+    results = sim.gpt_sample_n_steps(gpt_token, 4, start_col_index, sample=True)
+    historical_context = results[:-4]
+    pred = results[-4:]
+
+    assert np.all(historical_context == gpt_token)
+
+    # Always remember that gpt model returns stochastic predictions. Hence, the test must not check
+    # for point equality, otherwise the test is very fragile to changes and we end-up chasing the
+    # tail. Instead, acceptance criteria simply makes sure that gpt tokens are inverted to dataframe
+    # tokens in valid range.
+    pred2 = sim.tokenizer.gpt_inverse_tokenize(pred)
+    min_valid_range = df_dummy_tokenized.iloc[:, :4].min().values
+    max_valid_range = df_dummy_tokenized.iloc[:, :4].max().values
+    assert np.all((pred2 >= min_valid_range) & (pred2 <= max_valid_range))
 
 
 @pytest.mark.parametrize(
