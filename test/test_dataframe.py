@@ -120,10 +120,10 @@ def test_property_sar(df, sar):
 
 
 @pytest.mark.parametrize("sarsa", (True, False))
-def test_add_value(df_multi_episode, sarsa, sar_d):
-    expected_cols = df_multi_episode.columns.append(pd.Index(["value"]))
+def test_add_value(df, sarsa, sar_d):
+    expected_cols = df.columns.append(pd.Index(["value"]))
 
-    df2 = df_multi_episode.copy()
+    df2 = df.copy()
     actual_cols = df2.add_value(sarsa=sarsa).columns
     assert np.all(actual_cols == expected_cols)
     assert df2.sar_d == {
@@ -134,10 +134,10 @@ def test_add_value(df_multi_episode, sarsa, sar_d):
 
 
 @pytest.mark.parametrize("sarsa", (True, False))
-def test_add_multi_episode_value(df, sarsa, sar_d):
-    expected_cols = df.columns.append(pd.Index(["value"]))
+def test_add_multi_episode_value(df_multi_episode, sarsa, sar_d):
+    expected_cols = df_multi_episode.columns.append(pd.Index(["value"]))
 
-    df2 = df.copy()
+    df2 = df_multi_episode.copy()
     actual_cols = df2.add_value_for_multi_episode_process(
         sarsa=sarsa, episode_identifier="episode"
     ).columns
