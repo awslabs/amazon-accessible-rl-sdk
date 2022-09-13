@@ -677,8 +677,6 @@ class WiDataFrame(pd.DataFrame, SarMixin):
             self._rewards[1] = value_col
         return self
 
-
-
     def add_value_for_multi_episode_process(
         self,
         sarsa: bool = True,
@@ -704,8 +702,8 @@ class WiDataFrame(pd.DataFrame, SarMixin):
             override: What to do when this dataframe has had column ``value_col``. Valid values
                 are ``replace`` to silently override, ``warn`` to show a warning, and ``raise`` to
                 raise a :exc:`ValueError`.
-            episode_identifier: identifier in the 'self' dataframe that allows for groupby. Ensure that
-                breaks BETWEEN episodes are tagged with a ``0`` group name.
+            episode_identifier: identifier in the 'self' dataframe that allows for groupby.
+                Ensure that breaks BETWEEN episodes are tagged with a ``0`` group name.
         Returns:
             This dataframe, modified with an additional ``value_col`` column. This return value is
             provided to facilitate chaining as-per the functional programming style.
