@@ -201,6 +201,8 @@ def test_add_multi_episode_value_reward_only(df_multi_episode, sar_d):
     ]
     assert np.all(df2.query("value == 0.0").index == zero_values_idx)
 
+    assert np.all(df2["value"] != "3.14")
+
 
 def test_add_value_conflict(df):
     with pytest.raises(ValueError, match="Unspecified reward column:"):
