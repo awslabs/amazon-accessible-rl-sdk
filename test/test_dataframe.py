@@ -47,7 +47,7 @@ def df(data, sar_d):
 
 
 @pytest.fixture
-def df_multi_episode() -> wi.WiDataFrame:
+def df_multi_episode(sar_d) -> wi.WiDataFrame:
     return wi.WiDataFrame(
         {
             "a": [1, 1, 2, 0, 2, 3],
@@ -58,9 +58,7 @@ def df_multi_episode() -> wi.WiDataFrame:
             "f": [5, 6, 7, 0, 8, 9],
             "episode": ["a", "a", "a", 0, "b", "b"],
         },
-        states=["a", "b"],
-        actions=["c"],
-        rewards=["d"],
+        **sar_d,
     )
 
 
@@ -133,13 +131,34 @@ def test_add_value(df, sarsa, sar_d):
     }
 
 
+def test_add_value_reward_only(df, sar_d):
+    expected_cols = df.columns.append(pd.Index(["value"]))
+
+    df2 = wi.WiDataFrame(
+        df.assign(value="3.14"),
+        states=sar_d["states"],
+        actions=sar_d["actions"],
+        rewards=sar_d["rewards"] + ["value"],
+    )
+    actual_cols = df2.add_value().columns
+    assert np.all(actual_cols == expected_cols)
+    assert df2.sar_d == {
+        "states": sar_d["states"],
+        "actions": sar_d["actions"],
+        "rewards": sar_d["rewards"] + ["value"],
+    }
+
+    assert np.all(df2["value"] != "3.14")
+
+
 @pytest.mark.parametrize("sarsa", (True, False))
 def test_add_multi_episode_value(df_multi_episode, sarsa, sar_d):
     expected_cols = df_multi_episode.columns.append(pd.Index(["value"]))
 
     df2 = df_multi_episode.copy()
     actual_cols = df2.add_value_for_multi_episode_process(
-        sarsa=sarsa, episode_identifier="episode"
+        sarsa=sarsa,
+        episode_identifier="episode",
     ).columns
     assert np.all(actual_cols == expected_cols)
     assert df2.sar_d == {
@@ -147,6 +166,40 @@ def test_add_multi_episode_value(df_multi_episode, sarsa, sar_d):
         "actions": sar_d["actions"],
         "rewards": sar_d["rewards"] + ["value"],
     }
+
+    # zero values expected at specific index.
+    zero_values_idx = [
+        2,  # Last row of group a
+        3,  # The sentinel group separating group a and group b
+        5,  # Last row of group b
+    ]
+    assert np.all(df2.query("value == 0.0").index == zero_values_idx)
+
+
+def test_add_multi_episode_value_reward_only(df_multi_episode, sar_d):
+    expected_cols = df_multi_episode.columns.append(pd.Index(["value"]))
+
+    df2 = wi.WiDataFrame(
+        df_multi_episode.assign(value="3.14"),
+        states=sar_d["states"],
+        actions=sar_d["actions"],
+        rewards=sar_d["rewards"] + ["value"],
+    )
+    actual_cols = df2.add_value_for_multi_episode_process(episode_identifier="episode").columns
+    assert np.all(actual_cols == expected_cols)
+    assert df2.sar_d == {
+        "states": sar_d["states"],
+        "actions": sar_d["actions"],
+        "rewards": sar_d["rewards"] + ["value"],
+    }
+
+    # zero values expected at specific index.
+    zero_values_idx = [
+        2,  # Last row of group a
+        3,  # The sentinel group separating group a and group b
+        5,  # Last row of group b
+    ]
+    assert np.all(df2.query("value == 0.0").index == zero_values_idx)
 
 
 def test_add_value_conflict(df):
