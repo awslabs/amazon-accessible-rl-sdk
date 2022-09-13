@@ -17,4 +17,4 @@ Should you need the documentations for the base ``pandas`` functionalities, plea
 
     WiDataFrame
     WiSeries
-    WhatifWrapper
+    TransitionRecorder

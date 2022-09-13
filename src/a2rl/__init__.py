@@ -42,7 +42,7 @@ _warnings.warn = _warn
 
 # flake8: noqa: E402
 from . import utils
-from ._dataframe import WhatifWrapper, WiDataFrame, WiSeries
+from ._dataframe import TransitionRecorder, WiDataFrame, WiSeries
 from ._io import (
     Metadata,
     list_sample_datasets,

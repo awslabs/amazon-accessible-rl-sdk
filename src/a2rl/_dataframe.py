@@ -20,7 +20,6 @@ from typing import Any, Callable, Collection, Iterable, Literal, Protocol
 import gym
 import numpy as np
 import pandas as pd
-from typing_extensions import TypeGuard
 
 import a2rl as wi
 
@@ -679,46 +678,13 @@ class WiDataFrame(pd.DataFrame, SarMixin):
         return self
 
 
-def is_old_gym_step(
-    t: tuple[Any, Any, Any, Any] | tuple[Any, Any, Any, Any, Any]
-) -> TypeGuard[tuple[Any, Any, Any, Any]]:
-    """Determines whether tuple ``t`` is returned by ``gym<0.25.0``.
-
-    Related commit: https://github.com/openai/gym/commit/907b1b20dd9ac0cba5803225059b9c6673702467.
-
-    Args:
-        t (tuple[Any, Any, Any, Any] | tuple[Any, Any, Any, Any, Any]): the return value of
-            :method:~`gym.Env.step()`.
-
-    Returns:
-        TypeGuard[tuple[Any, Any, Any, Any]]: True if tuple ``t`` is returned by gym<0.25.0``
-    """
-    return len(t) == 4
-
-
-def is_new_gym_step(
-    t: tuple[Any, Any, Any, Any] | tuple[Any, Any, Any, Any, Any]
-) -> TypeGuard[tuple[Any, Any, Any, Any, Any]]:
-    """Determines whether tuple ``t`` is returned by ``gym>=0.25.0``.
-
-    Related commit: https://github.com/openai/gym/commit/907b1b20dd9ac0cba5803225059b9c6673702467.
-
-    Args:
-        t (tuple[Any, Any, Any, Any] | tuple[Any, Any, Any, Any, Any]): the return value of
-            :method:~`gym.Env.step()`.
-
-    Returns:
-        TypeGuard[tuple[Any, Any, Any, Any, Any]]: True if tuple ``t`` is returned by
-            ``gym>=0.25.0``.
-    """
-    return len(t) == 5
-
-
-class WhatifWrapper(gym.Wrapper[Any, np.ndarray]):
+class TransitionRecorder(gym.Wrapper[Any, np.ndarray]):
     """Record the transitions in the OpenAI gym :class:`gym.Env` into a Whatif data frame.
 
     Args:
         env: a gym environment.
+        recording: When `True`, immediately start capturing steps. When `False`, callers need to
+            call :meth:`~TransitionRecorder.start()` to start capturing steps.
 
     Examples
     --------
@@ -727,34 +693,59 @@ class WhatifWrapper(gym.Wrapper[Any, np.ndarray]):
 
         >>> import gym
         >>> import a2rl as wi
-        >>> from stable_baselines3 import DQN
-        >>> from stable_baselines3.common.evaluation import evaluate_policy
-        >>> from stable_baselines3.ppo import MlpPolicy
-        >>>
-        >>> env_name = "Taxi-v3"
-        >>> env = gym.make(env_name)
-        >>> model = DQN(policy="MlpPolicy", env=env, verbose=False)
-        >>> model.learn(total_timesteps=10)  # doctest: +SKIP
-        >>> eval_env = gym.make(env_name)
-        >>> eval_env = wi.WhatifWrapper(eval_env)
-        >>> mean_reward, std_reward = evaluate_policy(model, eval_env, n_eval_episodes=10)
-        >>>
-        >>> eval_env.df.info()  # doctest: +NORMALIZE_WHITESPACE
+
+        >>> def do_steps(env):
+        ...     env.reset()
+        ...     for _ in range(5):
+        ...         env.step(0)
+
+        >>> env = wi.TransitionRecorder(env=gym.make("Taxi-v3"))
+        >>> do_steps(env)
+        >>> env.df.info()  # doctest: +NORMALIZE_WHITESPACE
         <class 'a2rl._dataframe.WiDataFrame'>
-        Int64Index: 2000 entries, 0 to 0
+        Int64Index: 5 entries, 0 to 0
         Data columns (total 3 columns):
          #   Column  Non-Null Count  Dtype
         ---  ------  --------------  -----
-         0   0       2000 non-null   float64
-         1   1       2000 non-null   float64
-         2   2       2000 non-null   float64
+         0   0       5 non-null      float64
+         1   1       5 non-null      float64
+         2   2       5 non-null      float64
         dtypes: float64(3)
-        memory usage: ... KB
+        memory usage: ...
+
+        >>> env.stop()
+        >>> do_steps(env)
+        >>> env.df.info()  # doctest: +NORMALIZE_WHITESPACE
+        <class 'a2rl._dataframe.WiDataFrame'>
+        Int64Index: 5 entries, 0 to 0
+        Data columns (total 3 columns):
+         #   Column  Non-Null Count  Dtype
+        ---  ------  --------------  -----
+         0   0       5 non-null      float64
+         1   1       5 non-null      float64
+         2   2       5 non-null      float64
+        dtypes: float64(3)
+        memory usage: ...
+
+        >>> env.start();
+        >>> do_steps(env)
+        >>> env.df.info()  # doctest: +NORMALIZE_WHITESPACE
+        <class 'a2rl._dataframe.WiDataFrame'>
+        Int64Index: 10 entries, 0 to 0
+        Data columns (total 3 columns):
+         #   Column  Non-Null Count  Dtype
+        ---  ------  --------------  -----
+         0   0       10 non-null     float64
+         1   1       10 non-null     float64
+         2   2       10 non-null     float64
+        dtypes: float64(3)
+        memory usage: ...
     """
 
-    def __init__(self, env: gym.Env):
+    def __init__(self, env: gym.Env, recording: bool = True):
         super().__init__(env)
         self.env = env
+        self.recording = recording
         self.episode = 0
 
         state = env.observation_space.sample()
@@ -777,6 +768,14 @@ class WhatifWrapper(gym.Wrapper[Any, np.ndarray]):
 
         self._state: Any
 
+    def start(self) -> None:
+        """Start capturing subsequent steps."""
+        self.recording = True
+
+    def stop(self) -> None:
+        """Stop capturing steps."""
+        self.recording = False
+
     def step(self, action: np.ndarray) -> tuple[Any, float, bool, dict]:
         """Wrapper to :func:`gym.Wrapper.step()` which records one timestep of the environment's
         dynamics.
@@ -784,31 +783,28 @@ class WhatifWrapper(gym.Wrapper[Any, np.ndarray]):
         Args:
             action (object): an action provided by the agent
         """
+        # See: https://github.com/openai/gym/commit/907b1b20dd9ac0cba5803225059b9c6673702467
+        # - gym<0.24.0: step_results = (next_state, reward, done, info)
+        # - gym>=0.25.0: step_results = (next_state, reward, done, _, info)
         step_results = self.env.step(action)
-        if is_old_gym_step(step_results):
-            # gym<0.24.0
-            next_state, reward, done, info = step_results
-        elif is_new_gym_step(step_results):
-            # gym>=0.25.0.
-            # See: https://github.com/openai/gym/commit/907b1b20dd9ac0cba5803225059b9c6673702467
-            next_state, reward, done, _, info = step_results
-        else:
-            raise ValueError(f"Invalid tuple length: len(step_results)={len(step_results)}")
+        next_state, reward, done = step_results[:3]
+        info = step_results[-1]
 
-        action = np.array(action).ravel()
-        stacked = np.hstack(
-            [
-                np.array(self._state).ravel(),
-                np.array(action).ravel(),
-                np.array(reward),
-            ]
-        )
-        self.df = pd.concat(  # type: ignore[assignment]
-            [
-                self.df,
-                WiDataFrame(stacked.reshape(1, -1), columns=list(self.df), **self.sar_d),
-            ]
-        )
+        if self.recording:
+            action = np.array(action).ravel()
+            stacked = np.hstack(
+                [
+                    np.array(self._state).ravel(),
+                    np.array(action).ravel(),
+                    np.array(reward),
+                ]
+            )
+            self.df = pd.concat(  # type: ignore[assignment]
+                [
+                    self.df,
+                    WiDataFrame(stacked.reshape(1, -1), columns=list(self.df), **self.sar_d),
+                ]
+            )
 
         self._state = next_state
         return next_state, reward, done, info

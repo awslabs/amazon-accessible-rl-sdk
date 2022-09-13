@@ -120,7 +120,6 @@ intersphinx_mapping = {
     "pandas": ("https://pandas.pydata.org/pandas-docs/stable/", None),
     "python": ("https://docs.python.org/3/", None),
     "sklearn": ("http://scikit-learn.org/stable/", None),
-    "stable_baselines3": ("https://stable-baselines3.readthedocs.io/en/master/", None),
     "gym": ("https://gymlibrary.dev/", None),
     "pytorch_lightning": ("https://pytorch-lightning.readthedocs.io/en/stable/", None),
 }

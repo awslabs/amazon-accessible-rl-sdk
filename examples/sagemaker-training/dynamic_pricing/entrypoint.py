@@ -102,7 +102,7 @@ if __name__ == "__main__":
     model = trainer(policy="MlpPolicy", env=env, verbose=False)  # type: ignore[call-arg,arg-type]
     model.learn(total_timesteps=gym_timesteps[0])
 
-    cap_env = wi.WhatifWrapper(env)
+    cap_env = wi.TransitionRecorder(env)
     model.set_env(cap_env)
     model.learn(total_timesteps=gym_timesteps[1])
 

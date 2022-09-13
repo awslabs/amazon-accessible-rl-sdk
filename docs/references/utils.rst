@@ -14,7 +14,6 @@ Utility functions.
     backtest
     better_than_random
     conditional_entropy
-    data_generator_gym
     data_generator_simple
     entropy
     force_assert

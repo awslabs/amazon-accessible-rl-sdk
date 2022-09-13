@@ -18,15 +18,12 @@ from random import randrange
 from typing import Any
 
 import cloudpickle
-import gym
 import numpy as np
 import pandas as pd
 import seaborn as sns
 import torch
 from loguru import logger
 from matplotlib.pyplot import Axes
-from stable_baselines3 import A2C
-from stable_baselines3.common.base_class import BaseAlgorithm
 
 import a2rl as wi
 
@@ -584,46 +581,3 @@ def data_generator_simple(
         wi_df_tok = tokeniser.fit_transform(wi_df)
 
         return wi_df_tok
-
-
-def data_generator_gym(
-    env_name: str = "Taxi-v3",
-    trainer: type[BaseAlgorithm] = A2C,
-    training_steps: int = 10000,
-    capture_steps: int = 1000,
-) -> wi.WiDataFrame:
-    """Generate a :class:`a2rl.WiDataFrame` from any well-defined OpenAi gym.
-
-    An agent is trained first for ``training_steps``. Then, capture ``capture_steps`` from the
-    trained agent.
-
-    Args:
-        env_name: Name of the gym environment.
-        trainer: An underlying generator algorithm that supports discrete actions, such as
-            :class:`stable_baselines3.dqn.DQN` or :class:`stable_baselines3.a2c.A2C`. Raise an error
-            when passing a trainer that does not support discrete actions, such as
-            :class:`stable_baselines3.sac.SAC`.
-        training_steps: The number of steps to train the generator.
-        capture_steps: The number of steps to capture.
-
-    Returns:
-        Whatif data frame.
-    """
-    # env_name = 'FrozenLake-v1'
-    # env_name ='CartPole-v1'
-    # env_name ='MountainCar-v0'
-    # env_name = 'FrozenLake8x8-v1'
-    # env_name= 'BipedalWalker-v3'
-
-    env = gym.make(env_name)
-    model = trainer(policy="MlpPolicy", env=env, verbose=False)  # type: ignore[call-arg,arg-type]
-    model.learn(total_timesteps=training_steps)
-
-    cap_env = wi.WhatifWrapper(env)
-    model.set_env(cap_env)
-    model.learn(total_timesteps=capture_steps)
-
-    tokeniser = wi.DiscreteTokenizer(n_bins=50)
-    df = tokeniser.fit_transform(cap_env.df)
-
-    return df
