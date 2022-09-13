@@ -404,7 +404,7 @@ def test_sim_reset(sim):
 def test_sim_reset_context(sim, df_dummy_trimmed):
     # In test mode, the starting index is always 0, must map to 1st row of dataframe
     actual = sim.current_context.iloc[0]
-    assert (actual == df_dummy_trimmed.trim().iloc[0]).all()
+    assert (actual == df_dummy_trimmed.iloc[0]).all()
 
 
 def test_sim_reset_test_mode(autotokenizer_dummy):
