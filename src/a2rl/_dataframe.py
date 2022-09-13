@@ -708,7 +708,7 @@ class WiDataFrame(pd.DataFrame, SarMixin):
             This dataframe, modified with an additional ``value_col`` column. This return value is
             provided to facilitate chaining as-per the functional programming style.
         """
-        self._check_add_value_args(value_col, override)
+        self._check_add_value_args(value_col, override, alpha, gamma)
         if len(self._rewards) == 1:
             df = self
         else:

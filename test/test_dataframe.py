@@ -46,6 +46,24 @@ def df(data, sar_d):
     return wi.WiDataFrame(data, **sar_d)
 
 
+@pytest.fixture
+def df_multi_episode() -> wi.WiDataFrame:
+    return wi.WiDataFrame(
+        {
+            "a": [1, 1, 2, 0, 2, 3],
+            "b": [1, 2, 3, 0, 4, 5],
+            "c": [2, 3, 4, 0, 5, 6],
+            "d": [3, 4, 5, 0, 6, 7],
+            "e": [4, 5, 6, 0, 7, 8],
+            "f": [5, 6, 7, 0, 8, 9],
+            "episode": ["a", "a", "a", 0, "b", "b"],
+        },
+        states=["a", "b"],
+        actions=["c"],
+        rewards=["d"],
+    )
+
+
 def test_from_pd_df(data, sar_d):
     df = pd.DataFrame(data)
     df2 = wi.WiDataFrame(df, **sar_d)
@@ -102,10 +120,10 @@ def test_property_sar(df, sar):
 
 
 @pytest.mark.parametrize("sarsa", (True, False))
-def test_add_value(df, sarsa, sar_d):
-    expected_cols = df.columns.append(pd.Index(["value"]))
+def test_add_value(df_multi_episode, sarsa, sar_d):
+    expected_cols = df_multi_episode.columns.append(pd.Index(["value"]))
 
-    df2 = df.copy()
+    df2 = df_multi_episode.copy()
     actual_cols = df2.add_value(sarsa=sarsa).columns
     assert np.all(actual_cols == expected_cols)
     assert df2.sar_d == {
