@@ -677,6 +677,112 @@ class WiDataFrame(pd.DataFrame, SarMixin):
             self._rewards[1] = value_col
         return self
 
+    def add_value_for_multi_episode_process(
+        self,
+        sarsa: bool = True,
+        alpha: float = 0.1,
+        gamma: float = 0.6,
+        value_col: str = "value",
+        episode_identifier: str = "episode",
+        override: Literal["replace", "warn", "error"] = "replace",
+    ) -> WiDataFrame:
+        """Append column ``value_col`` into this dataframe (restriction: ``df`` must NOT contain
+        column names ``_state``, ``_action``, ``_reward``, and the ``value_col``).
+
+        Args:
+            sarsa: When ``True``, compute the value using the `SARSA Bellman equation
+                <https://en.wikipedia.org/wiki/State-action-reward-state-action>`_ which is a
+                conservative on-policy temporal difference update. When ``False``, use the
+                `Q-Learning Bellman equation <https://en.wikipedia.org/wiki/Q-learning>`_ which is
+                an off-policy temporal difference update.
+            alpha: Learning rate in `Q-Learning <https://en.wikipedia.org/wiki/Q-learning>`_ and
+                `SARSA <https://en.wikipedia.org/wiki/State-action-reward-state-action>`_. Must be
+                be within 0 and 1.
+            gamma: Discount factor of future reward in Q-Learning and SARSA. Must be within 0 and 1.
+            value_col: The column name for the computed values.
+            override: What to do when this dataframe has had column ``value_col``. Valid values
+                are ``replace`` to silently override, ``warn`` to show a warning, and ``raise`` to
+                raise a :exc:`ValueError`.
+            episode_identifier: group-by key in the this dataframe. Ensure that breaks BETWEEN
+                episodes are tagged with a ``0`` group name.
+
+        Returns:
+            This dataframe, modified with an additional ``value_col`` column. This return value is
+            provided to facilitate chaining as-per the functional programming style.
+        """
+        self._check_add_value_args(value_col, override, alpha, gamma)
+        if len(self._rewards) == 1:
+            df = self
+        else:
+            df = WiDataFrame(
+                self,
+                states=self.states,
+                actions=self.actions,
+                rewards=self.rewards[:1],
+            )
+        df_t = wi.DiscreteTokenizer(n_bins=50).fit_transform(df.trim())
+
+        def calc_q_values(sub, df, x, alpha, gamma, sarsa=sarsa):
+            # print(x.name)
+            if sub.name == 0:
+                return pd.Series(0, index=sub.index)
+
+            df = df.loc[sub.index]
+            x = x.loc[sub.index]
+
+            # Temp df with only three columns: _state, _action, _reward
+            df_t = pd.concat(  # type: ignore[assignment]
+                [
+                    x[x.states].astype(str).apply("_".join, axis=1).astype("category").cat.codes,
+                    x[x.actions].astype(str).apply("_".join, axis=1).astype("category").cat.codes,
+                    df[df.rewards],  # .reset_index(drop=False),
+                ],
+                axis=1,
+                copy=False,
+            )
+
+            df_t.columns = ["_state", "_action", "_reward"]  # type: ignore[assignment]
+
+            q_table = np.zeros([df_t["_state"].nunique(), df_t["_action"].nunique()])
+
+            iterations = 10
+
+            for n in range(iterations):
+                for i in range(df_t.index[0], df_t.index[-1]):
+                    state = int(df_t.loc[i, "_state"])
+                    next_state = int(df_t.loc[i + 1, "_state"])
+                    action = int(df_t.loc[i, "_action"])
+                    reward = df_t.loc[i + 1, "_reward"]
+                    old_value = q_table[state, action]
+
+                    if sarsa:
+                        next_value = q_table[next_state, np.argmax(q_table[next_state])]
+                        new_value = old_value + alpha * (reward + gamma * next_value - old_value)
+                    else:
+                        next_max = np.max(q_table[next_state])
+                        new_value = old_value + alpha * (reward + gamma * next_max - old_value)
+
+                    q_table[state, action] = new_value
+
+            return pd.Series(
+                q_table[df_t["_state"].astype(int), df_t["_action"].astype(int)],
+                index=df.index,
+            )
+
+        x = df.groupby(episode_identifier).apply(lambda x: calc_q_values(x, df, df_t, alpha, gamma))
+        x2 = x.reset_index(level=0)
+        x2.rename({0: value_col}, axis=1, inplace=True)
+        x2.drop([episode_identifier], axis=1, inplace=True)
+        x2 = x2.sort_index()
+        self[value_col] = x2
+
+        if len(self._rewards) < 2:
+            self._rewards.append(value_col)
+        else:
+            self._rewards[1] = value_col
+
+        return self
+
 
 class TransitionRecorder(gym.Wrapper[Any, np.ndarray]):
     """Record the transitions in the OpenAI gym :class:`gym.Env` into a Whatif data frame.
