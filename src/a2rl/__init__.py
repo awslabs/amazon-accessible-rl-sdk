@@ -55,4 +55,4 @@ from ._metadatadict import MetadataDict
 from .simulator import AutoTokenizer, GPTBuilder, Simulator, SimulatorDataset, SimulatorWrapper
 from .tokenizer import DiscreteTokenizer, Tokenizer
 
-__version__ = "1.0.2"
+__version__ = "1.1.0"
