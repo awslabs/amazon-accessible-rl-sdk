@@ -656,14 +656,10 @@ class WiDataFrame(pd.DataFrame, SarMixin):
 
                 if sarsa:
                     next_value = q_table[next_state, np.argmax(q_table[next_state])]
-                    new_value = (1 - alpha) * old_value + alpha * (
-                        reward + gamma * next_value - old_value
-                    )
+                    new_value = old_value + alpha * (reward + gamma * next_value - old_value)
                 else:
                     next_max = np.max(q_table[next_state])
-                    new_value = (1 - alpha) * old_value + alpha * (
-                        reward + gamma * next_max - old_value
-                    )
+                    new_value = old_value + alpha * (reward + gamma * next_max - old_value)
 
                 q_table[state, action] = new_value
 

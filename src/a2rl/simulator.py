@@ -170,11 +170,11 @@ class AutoTokenizer:
         ...     columns=["s1", "s2", "a", "r"],
         ... )
         >>> wi_df = wi.WiDataFrame(df, states=["s1", "s2"], actions=["a"], rewards=["r"])
-        >>> wi_df.add_value()
-           s1  s2   a    r       value
-        0   0  10  20  200  122.610372
-        1   1  12  21  225  105.776159
-        2   2  15  22  237    0.000000
+        >>> wi_df.add_value()  # doctest: +NORMALIZE_WHITESPACE
+           s1  s2   a    r  value
+        0   0  10  20  200  184...
+        1   1  12  21  225  154...
+        2   2  15  22  237    0...
 
     Retrived discretized dataframe using ``df_tokenized`` property.
 
@@ -185,7 +185,7 @@ class AutoTokenizer:
         >>> tokenizer.df_tokenized
            s1   s2    a    r  value
         0   0  100  200  300    499
-        1  50  140  250  367    486
+        1  50  140  250  367    483
         2  99  199  299  399    400
 
 
@@ -206,7 +206,7 @@ class AutoTokenizer:
         >>> new_wi_df = new_wi_df.add_value()
         >>> tokenizer.field_tokenizer.transform(new_wi_df)
            s1   s2    a    r  value
-        0   0  180  299  327    476
+        0   0  180  299  327    474
         1  99  199  299  329    400
 
     .. note::
@@ -833,11 +833,11 @@ class Simulator(gym.Env[np.ndarray, list]):
         ...     columns=["s1", "s2", "a", "r"],
         ... )
         >>> wi_df = wi.WiDataFrame(df, states=["s1", "s2"], actions=["a"], rewards=["r"])
-        >>> wi_df.add_value()
-           s1  s2   a    r       value
-        0   0  10  20  200  122.610372
-        1   1  12  21  225  105.776159
-        2   2  15  22  237    0.000000
+        >>> wi_df.add_value()  # doctest: +NORMALIZE_WHITESPACE
+           s1  s2   a    r  value
+        0   0  10  20  200  184...
+        1   1  12  21  225  154...
+        2   2  15  22  237    0...
 
     Next create a :class:`AutoTokenizer` using the dataframe, indicating the desired block size
     in term of number of rows. You can get discretized dataframe token
@@ -850,7 +850,7 @@ class Simulator(gym.Env[np.ndarray, list]):
         >>> tokenizer.df_tokenized
            s1   s2    a    r  value
         0   0  100  200  300    499
-        1  50  140  250  367    486
+        1  50  140  250  367    483
         2  99  199  299  399    400
 
     Train a GPT model using :class:GPTBuilder by passing in the :class:`AutoTokenizer`, and
@@ -861,7 +861,7 @@ class Simulator(gym.Env[np.ndarray, list]):
         >>> import tempfile
         >>> with tempfile.TemporaryDirectory() as model_dir:
         ...     builder = wi.GPTBuilder(tokenizer, model_dir)
-        ...     builder.fit() # doctest:+ELLIPSIS
+        ...     builder.fit()
         GPT(...)
 
     Get a recommendation by giving a context, and perform ``max_size`` number of sampling.
