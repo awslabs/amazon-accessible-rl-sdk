@@ -439,7 +439,7 @@ class DiscreteTokenizer(Tokenizer):
                 columns=self.cat_columns,
                 **sar_d,
             )
-            df_encoded += self.bases_cat
+            df_encoded += self.bases_cat  # type: ignore[assignment]
 
         # Label-encode the categorical columns.
         if len(self.quantized_columns) > 0:
@@ -448,7 +448,7 @@ class DiscreteTokenizer(Tokenizer):
                 columns=self.quantized_columns,
                 **sar_d,
             )
-            df_quantized += self.bases_num
+            df_quantized += self.bases_num  # type: ignore[assignment]
 
         return pd.concat([df_quantized, df_encoded], axis=1)[self.columns]
 

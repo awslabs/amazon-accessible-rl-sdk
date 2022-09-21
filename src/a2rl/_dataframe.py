@@ -187,7 +187,7 @@ class SarMixin:
         return list(self._rewards)
 
 
-class WiSeries(pd.Series, SarMixin):
+class WiSeries(pd.Series, SarMixin):  # type: ignore[misc]
     _metadata = ["_states", "_actions", "_rewards"]
 
     def __init__(
