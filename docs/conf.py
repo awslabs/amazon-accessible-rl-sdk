@@ -37,7 +37,7 @@ copyright = "2022, AWS ProServe"
 author = "AWS ProServe"
 
 # The full version, including alpha/beta/rc tags
-release = "1.1.1-dev"
+release = "1.1.1"
 
 # -- General configuration ---------------------------------------------------
 

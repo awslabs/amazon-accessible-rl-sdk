@@ -1,5 +1,12 @@
 # Changelogs <!-- omit in toc -->
 
+## v1.1.0 (2022-09-21)
+
+Bug fixes:
+
+- The warning silencer from `a2rl` crashes on `matplotlib`'s `DeprecationWarning`
+  ([#26](https://github.com/awslabs/amazon-accessible-rl-sdk/pull/26)).
+
 ## v1.1.0 (2022-09-15)
 
 Features:
