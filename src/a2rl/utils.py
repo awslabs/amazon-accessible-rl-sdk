@@ -457,8 +457,8 @@ def markovian_matrix(df: wi.WiDataFrame, lags: int = 10) -> pd.DataFrame:
         ],
     ]
 
-    df = pd.DataFrame(data, columns=labels).set_index("Test")
-    mask = pd.DataFrame(mask, columns=labels).set_index("Test")
+    df = pd.DataFrame(data, columns=labels).set_index("Test")  # type: ignore[assignment]
+    mask = pd.DataFrame(mask, columns=labels).set_index("Test")  # type: ignore[assignment]
     return df.mask(mask)
 
 
