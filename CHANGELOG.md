@@ -1,6 +1,8 @@
 # Changelogs <!-- omit in toc -->
 
-## v1.1.0 (2022-09-21)
+## v1.1.2-dev
+
+## v1.1.1 (2022-09-21)
 
 Bug fixes:
 
