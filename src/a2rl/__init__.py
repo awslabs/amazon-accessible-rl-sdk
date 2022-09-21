@@ -26,12 +26,13 @@ def _warn(message, category=None, stacklevel=1, source=None):
     if category is not DeprecationWarning:
         original_warn(message, category, stacklevel, source)
 
-    if message.startswith("distutils Version classes are deprecated."):
-        # https://github.com/mwaskom/seaborn/issues/2724
-        return
-    if message.endswith("descriptors from generated code or query the descriptor_pool."):
-        # https://github.com/tensorflow/tensorboard/issues/5798
-        return
+    if isinstance(message, str):
+        if message.startswith("distutils Version classes are deprecated."):
+            # https://github.com/mwaskom/seaborn/issues/2724
+            return
+        if message.endswith("descriptors from generated code or query the descriptor_pool."):
+            # https://github.com/tensorflow/tensorboard/issues/5798
+            return
 
     # Still show any other deprecation warning.
     original_warn(message, category, stacklevel, source)
