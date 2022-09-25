@@ -1,7 +1,8 @@
 sphinx
 
-# https://github.com/spatialaudio/nbsphinx/issues/669
-pydata-sphinx-theme<0.10.1
+# Eagerly anticipate fix to broken 'self' toctree entry.
+# https://github.com/pydata/pydata-sphinx-theme/issues/926
+pydata-sphinx-theme!=0.10.1
 
 sphinx-toggleprompt
 sphinx-autodoc-typehints
