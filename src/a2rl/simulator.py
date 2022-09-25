@@ -1062,10 +1062,13 @@ class Simulator(gym.Env[np.ndarray, list]):
         raise NotImplementedError("render() is not supported.")
 
     def _gpt_predict(self, seq: torch.Tensor, block_size: int) -> torch.Tensor:
-        """Predict next GPT token given the input sequence of GPT tokens.
+        """Predict next GPT token given the input sequence of GPT tokens, where the sequence length
+        is subjected to at most ``block_size`` tokens.
 
         Arguments:
-            seq: GPT tokens, 2D dimension (n_sample, seq_length).
+            seq: GPT tokens as a 2D array ``(n_sample, seq_length)``. If ``seq_length`` is greater
+                than ``block_size``, then this input sequence will be silently trimmed to
+                ``(batch_size, block_size)``.
             block_size: maximum context window size.
 
         Returns:
@@ -1276,8 +1279,10 @@ class Simulator(gym.Env[np.ndarray, list]):
             ])
 
         Args:
-            seq: a batch of context (s, a, r, ..., s). Must end with states dataframe token.
-                Shape is (batch_size, context_length).
+            seq: a batch of context ``(s, a, r, ..., s)``. Must end with states dataframe token.
+                Shape is ``(batch_size, context_length)``. If ``context_length`` is greater than
+                :attr:`AutoTokenizer.block_size`, then this input sequence will be silently trimmed
+                to ``(batch_size, block_size)``.
             max_size: Number of samples to return.
             as_token: whether the returned dataframe should be in tokenized format, or in the
                 original value space (approximated).
@@ -1288,11 +1293,11 @@ class Simulator(gym.Env[np.ndarray, list]):
             ``as_token`` determines whether the dataframe contents are tokenized or in the
             original value space (approximated).
 
-            Shape is (batch_size * max_size, ...). Starting with 1st context's actions, followed
-            2nd context's actions and so on.
+            Shape is ``(batch_size * max_size, ...)``. Starting with the 1st context's actions,
+            followed by the context's actions and so on.
 
         .. note::
-            - Ensure the correct context sequence ``s, a, r, ..., s)`` is passed in.
+            - Ensure the correct context sequence ``(s, a, r, ..., s)`` is passed in.
             - Return ``max_size`` of sampling for each context. Result may not be unique.
             - Each rows of return result represent actions, rewards and values.
 
