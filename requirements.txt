@@ -4,7 +4,7 @@ scikit-learn
 scipy
 matplotlib
 torch
-tqdm>=4.24.0
+tqdm>=4.64.1
 PyYaml>=5.1
 typing_extensions
 typeguard
