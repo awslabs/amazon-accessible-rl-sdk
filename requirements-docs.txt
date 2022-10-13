@@ -1,6 +1,5 @@
 sphinx
 
-# Eagerly anticipate fix to broken 'self' toctree entry.
 # https://github.com/pydata/pydata-sphinx-theme/issues/926
 pydata-sphinx-theme!=0.10.1
 

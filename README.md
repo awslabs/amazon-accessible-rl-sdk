@@ -1,7 +1,9 @@
 # Amazon Accessible RL SDK <!-- omit from toc -->
 
 [ [Documentation](https://awslabs.github.io/amazon-accessible-rl-sdk/) |
-[PyPI](https://pypi.org/project/a2rl/) ]
+[PyPI](https://pypi.org/project/a2rl/) |
+[Blog-01](https://medium.com/@yapweiyih/underfloor-heating-optimisation-using-offline-reinforcement-learning-44f7747f4d6f)
+| Blog-02 (coming soon) ]
 
 Amazon Accessible RL (A2RL) is an open-source Python package for [sequential decision making
 problem](https://en.wikipedia.org/wiki/Sequential_decision_making) using offline time-series data.
@@ -10,7 +12,10 @@ technology behind [GATO](https://www.deepmind.com/publications/a-generalist-agen
 transformer](https://trajectory-transformer.github.io/) and [decision
 transformer](https://arxiv.org/abs/2106.01345).
 
-A2RL guides you through problem formulation, conduct [initial data
+A2RL guides you through [problem formulation](https://awslabs.github.io/amazon-accessible-rl-sdk/)
+via [data frames
+API](https://awslabs.github.io/amazon-accessible-rl-sdk/example.html#historical-data), conduct
+[initial data
 analysis](https://awslabs.github.io/amazon-accessible-rl-sdk/auto-notebooks/data_properties.html) to
 see if a solution is possible, use the data to train a
 [simulator](https://awslabs.github.io/amazon-accessible-rl-sdk/auto-notebooks/simulator.html) (aka
@@ -56,6 +61,11 @@ recommendation_df = simulator.sample(custom_context, 3)
 # Show recommendations (i.e., trajectory)
 recommendation_df
 ```
+
+For more examples, see `notebooks/` (pre-rendered versions
+[here](https://awslabs.github.io/amazon-accessible-rl-sdk/example.html)), and the A2RL blog series:
+[part-1](https://medium.com/@yapweiyih/underfloor-heating-optimisation-using-offline-reinforcement-learning-44f7747f4d6f)
+and part-2 (coming soon).
 
 ## Help and Support
 
