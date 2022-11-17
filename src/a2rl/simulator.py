@@ -544,7 +544,7 @@ class BaseBuilder(ABC, Generic[Model_T, Trainer_T]):
         x_np = x.numpy().flatten()
         return x_np
 
-    def evaluate(self, context_len: int = 20, sample: bool = True, horizon: int = None) -> Axes:
+    def evaluate(self, context_len: int = 20, sample: bool = True, horizon: int = 200) -> Axes:
         """This is to evaluate the raw GPT model.
 
         Arguments:
@@ -555,10 +555,6 @@ class BaseBuilder(ABC, Generic[Model_T, Trainer_T]):
         Returns:
             Matplotlib Axes.
         """
-
-        if horizon is None:
-            horizon = 200
-
         test_seq = self.tokenizer.df_tokenized.sequence[:context_len]
         test_gpt_token = self.tokenizer.gpt_tokenize(test_seq)
         preds_gpt = self.sample(test_gpt_token, n_steps=(horizon), sample=sample)
