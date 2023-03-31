@@ -17,3 +17,5 @@ gym>=0.23.1,<0.26.0
 seaborn
 cloudpickle
 pytorch-lightning>=1.5.0
+
+tensorboardX

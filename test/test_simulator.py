@@ -390,7 +390,7 @@ def test_sim_reset(sim):
     state = sim.reset()
     assert isinstance(state, np.ndarray)
     assert len(state) == len(sim.tokenizer.state_indices)
-    assert state.dtype == np.object
+    assert state.dtype == object
     assert sim._ix == 0
 
 
@@ -744,6 +744,50 @@ def test_sim_gpt_sample_n_steps(sim, start_col_index, gpt_token_context):
             sim.tokenizer.simulator_ds,
         )
         assert cur_value in vald_token_range
+
+
+@pytest.mark.parametrize(
+    "sim",
+    [
+        pytest.lazy_fixture("sim_mingpt"),  # type: ignore[operator]
+        pytest.lazy_fixture("sim_lightgpt"),  # type: ignore[operator]
+    ],
+)
+@pytest.mark.parametrize(
+    "start_col_index, gpt_token_context",
+    [
+        (
+            0,
+            np.array([0, 2, 16, 18, 5, 11]),
+        ),
+        (
+            2,
+            np.array([0, 2, 16, 18, 5, 11, 0, 2]),
+        ),
+    ],
+)
+def test_sim_beam_search_n_steps(sim: Simulator, start_col_index, gpt_token_context):
+    NUM_STEP = 4
+    BEAM_WIDTH = 2
+    # result = sim.gpt_sample_n_steps(gpt_token_context, NUM_STEP, start_col_index)
+    result = sim.beam_search_n_steps(
+        gpt_token_context,
+        NUM_STEP,
+        BEAM_WIDTH,
+        start_col_idx=start_col_index,
+        is_gpt_token=True,
+    )
+    assert result.shape == (BEAM_WIDTH, NUM_STEP + len(gpt_token_context))
+    for j in range(BEAM_WIDTH):
+        for i in range(NUM_STEP):
+            cur_idx = len(gpt_token_context) + i
+            cur_value = result[j, cur_idx : cur_idx + 1]
+            vald_token_range = get_valid_gpt_token_idx(
+                sim.tokenizer.col_eligible_index,
+                (start_col_index + i) % sim.tokenizer.column_len,
+                sim.tokenizer.simulator_ds,
+            )
+            assert cur_value in vald_token_range
 
 
 @pytest.mark.parametrize(
