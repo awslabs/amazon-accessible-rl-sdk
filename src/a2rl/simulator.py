@@ -1260,8 +1260,8 @@ class Simulator(gym.Env[np.ndarray, list]):
         is_gpt_token: bool = False,
         return_logprobs: bool = False,
     ):
-        """This function largely replaces A2RL Simulator.gpt_sample_n_steps(). It does not
-        concern states/actions/rewards and only generates the next N tokens using beam search.
+        """This function largely replaces A2RL :meth:`Simulator.gpt_sample_n_steps()`. It does not
+        concern states/actions/rewards and only generates the next ``N`` tokens using beam search.
         This function is to be used by a planner.
 
         Args:
@@ -1271,12 +1271,12 @@ class Simulator(gym.Env[np.ndarray, list]):
                 the starting column. Setting this to 1 is equivalent to behaviour cloning.
             randomness: if True, will use multinomial sampling of the top-n tokens instead of
                 deterministic beam search.
-            overwrite_valid_tokens: dict[ col_name : list of GPT tokens ], overwrite the valid
+            overwrite_valid_tokens: ``dict[ col_name : list of GPT tokens ]``, overwrite the valid
                 tokens in a column, useful if additional constriants need to be applied during
                 inference.
             start_col_index: Indicate the starting dataframe column index. Default to
-                `len(seq) % len(columns)` if None
-            is_gpt_token: whether the tokens in `seq` are GPT tokens or DataFrame tokens
+                ``len(seq) % len(columns)`` if None
+            is_gpt_token: whether the tokens in ``seq`` are GPT tokens or DataFrame tokens
             return_logprobs: if True, the return will be a tuple of tokens and the accumulated
                 logprobs of each beam.
         """
@@ -1340,7 +1340,7 @@ class Simulator(gym.Env[np.ndarray, list]):
 
         if return_logprobs:
             return seq, accum_logprobs
-    
+
         return seq
 
     def sample(
