@@ -14,6 +14,7 @@ from __future__ import annotations
 
 from unittest import mock
 
+import pandas as pd
 import pytest
 from pandas.api.types import is_numeric_dtype
 
@@ -103,5 +104,8 @@ def test_forced_categories(df, tmp_path, forced_categories, expected_types):
     df.to_csv(p / "data.csv", index=False)
 
     df2 = wi.read_csv_dataset(p)
-    is_numeric_series = [is_numeric_dtype(ser) for _, ser in df2.iteritems()]
+    if pd.__version__ >= '1.5.0':
+        is_numeric_series = [is_numeric_dtype(ser) for _, ser in df2.items()]
+    else:
+        is_numeric_series = [is_numeric_dtype(ser) for _, ser in df2.iteritems()]
     assert is_numeric_series == expected_types
