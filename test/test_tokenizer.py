@@ -201,7 +201,7 @@ def test_valid_tokens():
     for i, (col_name, expected_tokens) in enumerate(expected.items()):
         for c in (i, col_name):
             actual = t.valid_tokens(c)
-            check_type(f"actual_valid_tokens", actual, List[Union[int, np.integer]])
+            check_type(actual, List[Union[int, np.integer]])
             assert expected_tokens == actual
 
 

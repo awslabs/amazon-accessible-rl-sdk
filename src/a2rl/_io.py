@@ -187,12 +187,12 @@ class Metadata:
     tags: dict[str, Any] = field(default_factory=dict)
 
     def __post_init__(self) -> None:
-        check_type("states", self.states, List[str])
-        check_type("actions", self.actions, List[str])
-        check_type("rewards", self.rewards, List[str])
-        check_type("forced_categories", self.forced_categories, Optional[List[str]])
-        check_type("frequency", self.frequency, Optional[str])
-        check_type("tags", self.tags, Dict[str, Any])
+        check_type(self.states, List[str])
+        check_type(self.actions, List[str])
+        check_type(self.rewards, List[str])
+        check_type(self.forced_categories, Optional[List[str]])
+        check_type(self.frequency, Optional[str])
+        check_type(self.tags, Dict[str, Any])
 
 
 def read_metadata(yaml_file: str | Path) -> Metadata:

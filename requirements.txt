@@ -7,7 +7,7 @@ torch
 tqdm>=4.64.1
 PyYaml>=5.1
 typing_extensions
-typeguard
+typeguard>=3.0.0
 nptyping
 loguru
 
