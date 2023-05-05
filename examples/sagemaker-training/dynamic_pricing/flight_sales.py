@@ -95,7 +95,6 @@ class flight_sales_gym(gym.Env):
         pass
 
     def step(self, action):
-
         self.freight_price = self.config["freight_price"] + np.random.random()
         self.freight_price = np.round(self.freight_price, decimals=1)
 
@@ -113,9 +112,7 @@ class flight_sales_gym(gym.Env):
 
         for i in range(self.visitors):
             if seats_left > 0:
-
                 if np.random.random() < fsigmoid([action], *self.params)[0]:
-
                     seats_left -= 1
                     tickets += 1
 
@@ -149,7 +146,6 @@ class flight_sales_gym(gym.Env):
         return state, reward, done, {}
 
     def context(self):
-
         return wi.WiDataFrame(
             self.history.fillna(method="ffill"),
             states=["season", "freight_price"],
@@ -158,7 +154,6 @@ class flight_sales_gym(gym.Env):
         )
 
     def reset(self):
-
         self.config = config
         self.day = 1
         self.max_time = self.config["max_time"]

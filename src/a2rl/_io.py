@@ -337,6 +337,7 @@ def save_metadata(
             tags: {}
             <BLANKLINE>
     """
+
     # Based on https://github.com/yaml/pyyaml/issues/127#issuecomment-525800484
     class BlankLiner(yaml.SafeDumper):
         def write_line_break(self, data=None):

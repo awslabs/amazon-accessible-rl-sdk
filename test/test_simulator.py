@@ -764,30 +764,66 @@ def test_sim_gpt_sample_n_steps(sim, start_col_index, gpt_token_context):
             2,
             np.array([0, 2, 16, 18, 5, 11, 0, 2]),
         ),
+        (
+            None,
+            np.array([0, 2, 16, 18, 5, 11, 0, 2]),
+        ),
     ],
 )
 def test_sim_beam_search_n_steps(sim: Simulator, start_col_index, gpt_token_context):
     NUM_STEP = 4
     BEAM_WIDTH = 2
-    # result = sim.gpt_sample_n_steps(gpt_token_context, NUM_STEP, start_col_index)
+
+    # Test randomness=True
     result = sim.beam_search_n_steps(
         gpt_token_context,
         NUM_STEP,
         BEAM_WIDTH,
+        randomness=True,
         start_col_idx=start_col_index,
         is_gpt_token=True,
     )
+
+    # Test overwrite_valid_tokens and return_logprobs
+    overwrite_valid_tokens = ({"A1": [15]},)
+    result, accum_logprobs = sim.beam_search_n_steps(
+        gpt_token_context,
+        NUM_STEP,
+        BEAM_WIDTH,
+        start_col_idx=start_col_index,
+        overwrite_valid_tokens=overwrite_valid_tokens,
+        is_gpt_token=True,
+        return_logprobs=True,
+    )
+
     assert result.shape == (BEAM_WIDTH, NUM_STEP + len(gpt_token_context))
+    assert accum_logprobs.shape == (BEAM_WIDTH,)
+
+    if start_col_index is None:
+        start_col_index = len(gpt_token_context) % sim.tokenizer.column_len
     for j in range(BEAM_WIDTH):
         for i in range(NUM_STEP):
-            cur_idx = len(gpt_token_context) + i
-            cur_value = result[j, cur_idx : cur_idx + 1]
-            vald_token_range = get_valid_gpt_token_idx(
-                sim.tokenizer.col_eligible_index,
-                (start_col_index + i) % sim.tokenizer.column_len,
-                sim.tokenizer.simulator_ds,
-            )
-            assert cur_value in vald_token_range
+            cur_value = result[j, len(gpt_token_context) + i]
+            col_idx = (start_col_index + i) % sim.tokenizer.column_len
+            col_name = sim.tokenizer.columns[col_idx]
+
+            if col_name in overwrite_valid_tokens:
+                assert cur_value in overwrite_valid_tokens[col_name]
+            else:
+                valid_token_range = get_valid_gpt_token_idx(
+                    sim.tokenizer.col_eligible_index,
+                    col_idx,
+                    sim.tokenizer.simulator_ds,
+                )
+                assert cur_value in valid_token_range
+
+    BEAM_WIDTH = 99
+    with pytest.raises(
+        ValueError, match="beam_width cannot be larger than the vocab size of the starting column"
+    ):
+        sim.beam_search_n_steps(
+            gpt_token_context, 1, BEAM_WIDTH, start_col_idx=start_col_index, is_gpt_token=True
+        )
 
 
 @pytest.mark.parametrize(

@@ -1267,8 +1267,10 @@ class Simulator(gym.Env[np.ndarray, list]):
         Args:
             seq: A sequence of tokens (1-dimensional only)
             n_steps: number of tokens to generate
-            beam_width: number of beams used in beam search. Must be <= n of valid tokens in
-                the starting column. Setting this to 1 is equivalent to behaviour cloning.
+            beam_width: number of beams used in beam search. Must be <= the vocab size in
+                the starting column (determined by both valid tokens of that column &
+                ``overwrite_valid_tokens``, if used).
+                Setting this to 1 is equivalent to behaviour cloning.
             randomness: if True, will use multinomial sampling of the top-n tokens instead of
                 deterministic beam search.
             overwrite_valid_tokens: ``dict[ col_name : list of GPT tokens ]``, overwrite the valid
@@ -1323,6 +1325,9 @@ class Simulator(gym.Env[np.ndarray, list]):
             logprobs = F.log_softmax(logits, dim=1)
             if accum_logprobs is not None:  # accum_logprobs is None on 1st loop
                 logprobs += accum_logprobs.reshape(-1, 1)
+
+            if beam_width > logprobs.numel():
+                raise ValueError(f"beam_width cannot be larger than the vocab size of the starting column. Expect beam_width <= {logprobs.numel()}, got {beam_width}")
 
             if randomness:
                 top_indices = torch.multinomial(logprobs.flatten().exp(), beam_width, replacement=False)
