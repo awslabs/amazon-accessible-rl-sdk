@@ -1248,6 +1248,106 @@ class Simulator(gym.Env[np.ndarray, list]):
         )
         return np.array([valid_token[i] for i in neighbors_idx.ravel()])
 
+    @torch.no_grad()
+    def beam_search_n_steps(
+        self,
+        seq: np.ndarray,
+        n_steps: int,
+        beam_width: int,
+        randomness: bool = False,
+        overwrite_valid_tokens: dict = None,  # {"col_name": [valid tokens], ...}
+        start_col_idx: int = None,
+        is_gpt_token: bool = False,
+        return_logprobs: bool = False,
+    ):
+        """This function largely replaces A2RL :meth:`Simulator.gpt_sample_n_steps()`. It does not
+        concern states/actions/rewards and only generates the next ``N`` tokens using beam search.
+        This function is to be used by a planner.
+
+        Args:
+            seq: A sequence of tokens (1-dimensional only)
+            n_steps: number of tokens to generate
+            beam_width: number of beams used in beam search. Must be <= the vocab size in
+                the starting column (determined by both valid tokens of that column &
+                ``overwrite_valid_tokens``, if used).
+                Setting this to 1 is equivalent to behaviour cloning.
+            randomness: if True, will use multinomial sampling of the top-n tokens instead of
+                deterministic beam search.
+            overwrite_valid_tokens: ``dict[ col_name : list of GPT tokens ]``, overwrite the valid
+                tokens in a column, useful if additional constriants need to be applied during
+                inference.
+            start_col_index: Indicate the starting dataframe column index. Default to
+                ``len(seq) % len(columns)`` if None
+            is_gpt_token: whether the tokens in ``seq`` are GPT tokens or DataFrame tokens
+            return_logprobs: if True, the return will be a tuple of tokens and the accumulated
+                logprobs of each beam.
+        """
+        if seq.ndim != 1:
+            raise NotImplementedError("batching not implemented")
+        if overwrite_valid_tokens is None:
+            overwrite_valid_tokens = dict()
+
+        if not is_gpt_token:
+            # seq and overwrite_valid_tokens are provided in Dataframe tokens
+            # Need to convert them to GPT tokens first
+            seq = self.tokenizer.gpt_tokenize(seq.ravel()).reshape(seq.shape)
+
+        columns = self.tokenizer.columns
+        if start_col_idx is None:  # assume seq is in SARSAR... format
+            start_col_idx = len(seq) % len(columns)
+
+        seq = torch.tensor(seq, device=self.device).reshape(1, -1)
+        accum_logprobs = None
+
+        for step in range(n_steps):
+            col_idx = (start_col_idx + step) % len(columns)
+            col_name = columns[col_idx]
+            if col_name in overwrite_valid_tokens:
+                valid_tokens = overwrite_valid_tokens[col_name]
+
+                if not is_gpt_token:
+                    valid_tokens = self.tokenizer.gpt_tokenize(np.asarray(valid_tokens))
+            else:
+                valid_tokens = get_valid_gpt_token_idx(
+                    self.tokenizer._col_eligible_index,
+                    col_idx,
+                    self.tokenizer.simulator_ds,
+                )
+
+            valid_tokens = torch.tensor(valid_tokens, device=self.device)
+
+            if valid_tokens.size(0) == 1:
+                seq = torch.hstack((seq, valid_tokens.tile(beam_width, 1)))
+                continue
+
+            logits = self._gpt_predict(seq, self.tokenizer.block_size)  # shape = (beam_width, vocab_size)
+            logits = logits[:, valid_tokens]
+            logprobs = F.log_softmax(logits, dim=1)
+            if accum_logprobs is not None:  # accum_logprobs is None on 1st loop
+                logprobs += accum_logprobs.reshape(-1, 1)
+
+            if beam_width > logprobs.numel():
+                raise ValueError(f"beam_width cannot be larger than the vocab size of the starting column. Expect beam_width <= {logprobs.numel()}, got {beam_width}")
+
+            if randomness:
+                top_indices = torch.multinomial(logprobs.flatten().exp(), beam_width, replacement=False)
+                accum_logprobs = logprobs.flatten()[top_indices]
+            else:
+                accum_logprobs, top_indices = torch.topk(logprobs.flatten(), beam_width)
+            seq_indices = torch.div(top_indices, valid_tokens.size(0), rounding_mode='floor')
+            token_indices = torch.remainder(top_indices, valid_tokens.size(0))
+
+            seq = torch.hstack((seq[seq_indices], valid_tokens[token_indices].reshape(-1, 1)))
+
+        seq, accum_logprobs = seq.cpu().numpy(), accum_logprobs.cpu().numpy()
+        if not is_gpt_token:
+            seq = self.tokenizer.gpt_inverse_tokenize(seq.ravel()).reshape(seq.shape)
+
+        if return_logprobs:
+            return seq, accum_logprobs
+
+        return seq
+
     def sample(
         self,
         seq: np.ndarray,

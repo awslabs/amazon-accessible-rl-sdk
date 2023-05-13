@@ -140,7 +140,6 @@ class UnderfloorEnv(gym.Env):
     """
 
     def __init__(self, env_config: UnderfloorEnvConfig):
-
         if not isinstance(env_config, UnderfloorEnvConfig):
             raise ValueError(f"Config must be of type UnderfloorEnvConfig, not {type(env_config)}")
 
@@ -228,7 +227,6 @@ class UnderfloorEnv(gym.Env):
             return self.state
 
     def step(self, action: list[int]) -> tuple[np.ndarray, float, bool, dict]:
-
         state_action = np.concatenate((self.state, action), axis=None)
         # print(f"{self.state=}")
         # print(f"{state_action=}")
