@@ -1254,8 +1254,8 @@ class Simulator(gym.Env[np.ndarray, list]):
         n_steps: int,
         beam_width: int,
         randomness: bool = False,
-        overwrite_valid_tokens: dict = None,  # {"col_name": [valid tokens], ...}
-        start_col_idx: int = None,
+        overwrite_valid_tokens: dict | None = None,  # {"col_name": [valid tokens], ...}
+        start_col_idx: int | None = None,
         is_gpt_token: bool = False,
         return_logprobs: bool = False,
     ):
@@ -1329,7 +1329,8 @@ class Simulator(gym.Env[np.ndarray, list]):
 
             if beam_width > logprobs.numel():
                 raise ValueError(
-                    f"beam_width cannot be larger than the vocab size of the starting column. Expect beam_width <= {logprobs.numel()}, got {beam_width}"
+                    "beam_width cannot be larger than the vocab size of the starting column. "
+                    f"Expect beam_width <= {logprobs.numel()}, got {beam_width}"
                 )
 
             if randomness:
