@@ -17,7 +17,7 @@ from setuptools import find_namespace_packages, setup
 
 _repo: str = "amazon-accessible-rl-sdk"
 _pkg: str = "a2rl"
-_version = "1.2.0-dev"
+_version = "1.2.0"
 
 
 def read_lines(fname: str) -> List[str]:
