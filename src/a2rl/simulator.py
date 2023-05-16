@@ -1343,11 +1343,15 @@ class Simulator(gym.Env[np.ndarray, list]):
             seq_indices = torch.div(top_indices, valid_tokens.size(0), rounding_mode="floor")
             token_indices = torch.remainder(top_indices, valid_tokens.size(0))
 
-            seq_tensor = torch.hstack((seq_tensor[seq_indices], valid_tokens[token_indices].reshape(-1, 1)))
+            seq_tensor = torch.hstack(
+                (seq_tensor[seq_indices], valid_tokens[token_indices].reshape(-1, 1))
+            )
 
         seq_tensor, accum_logprobs = seq_tensor.cpu().numpy(), accum_logprobs.cpu().numpy()
         if not is_gpt_token:
-            seq_tensor = self.tokenizer.gpt_inverse_tokenize(seq_tensor.ravel()).reshape(seq_tensor.shape)
+            seq_tensor = self.tokenizer.gpt_inverse_tokenize(seq_tensor.ravel()).reshape(
+                seq_tensor.shape
+            )
 
         if return_logprobs:
             return seq_tensor, accum_logprobs
