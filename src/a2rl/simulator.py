@@ -1248,7 +1248,7 @@ class Simulator(gym.Env[np.ndarray, list]):
         return np.array([valid_token[i] for i in neighbors_idx.ravel()])
 
     @torch.no_grad()
-    def beam_search_n_steps(
+    def beam_search_n_steps(  # noqa: C901
         self,
         seq: np.ndarray,
         n_steps: int,
@@ -1296,7 +1296,7 @@ class Simulator(gym.Env[np.ndarray, list]):
             start_col_idx = len(seq) % len(columns)
 
         seq_tensor = torch.tensor(seq, device=self.device).reshape(1, -1)
-        accum_logprobs = None
+        accum_logprobs = torch.empty(0)
 
         for step in range(n_steps):
             col_idx = (start_col_idx + step) % len(columns)
@@ -1324,7 +1324,7 @@ class Simulator(gym.Env[np.ndarray, list]):
             )  # shape = (beam_width, vocab_size)
             logits = logits[:, valid_tokens]
             logprobs = F.log_softmax(logits, dim=1)
-            if accum_logprobs is not None:  # accum_logprobs is None on 1st loop
+            if accum_logprobs.numel():  # accum_logprobs is None on 1st loop
                 logprobs += accum_logprobs.reshape(-1, 1)
 
             if beam_width > logprobs.numel():
