@@ -1295,7 +1295,7 @@ class Simulator(gym.Env[np.ndarray, list]):
         if start_col_idx is None:  # assume seq is in SARSAR... format
             start_col_idx = len(seq) % len(columns)
 
-        seq = torch.tensor(seq, device=self.device).reshape(1, -1)
+        seq_tensor = torch.tensor(seq, device=self.device).reshape(1, -1)
         accum_logprobs = None
 
         for step in range(n_steps):
@@ -1316,11 +1316,11 @@ class Simulator(gym.Env[np.ndarray, list]):
             valid_tokens = torch.tensor(valid_tokens, device=self.device)
 
             if valid_tokens.size(0) == 1:
-                seq = torch.hstack((seq, valid_tokens.tile(beam_width, 1)))
+                seq_tensor = torch.hstack((seq_tensor, valid_tokens.tile(beam_width, 1)))
                 continue
 
             logits = self._gpt_predict(
-                seq, self.tokenizer.block_size
+                seq_tensor, self.tokenizer.block_size
             )  # shape = (beam_width, vocab_size)
             logits = logits[:, valid_tokens]
             logprobs = F.log_softmax(logits, dim=1)
@@ -1343,16 +1343,16 @@ class Simulator(gym.Env[np.ndarray, list]):
             seq_indices = torch.div(top_indices, valid_tokens.size(0), rounding_mode="floor")
             token_indices = torch.remainder(top_indices, valid_tokens.size(0))
 
-            seq = torch.hstack((seq[seq_indices], valid_tokens[token_indices].reshape(-1, 1)))
+            seq_tensor = torch.hstack((seq_tensor[seq_indices], valid_tokens[token_indices].reshape(-1, 1)))
 
-        seq, accum_logprobs = seq.cpu().numpy(), accum_logprobs.cpu().numpy()
+        seq_tensor, accum_logprobs = seq_tensor.cpu().numpy(), accum_logprobs.cpu().numpy()
         if not is_gpt_token:
-            seq = self.tokenizer.gpt_inverse_tokenize(seq.ravel()).reshape(seq.shape)
+            seq_tensor = self.tokenizer.gpt_inverse_tokenize(seq_tensor.ravel()).reshape(seq_tensor.shape)
 
         if return_logprobs:
-            return seq, accum_logprobs
+            return seq_tensor, accum_logprobs
 
-        return seq
+        return seq_tensor
 
     def sample(
         self,
