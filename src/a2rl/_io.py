@@ -349,7 +349,7 @@ def save_metadata(
     if isinstance(metadata, Metadata):
         m = metadata
     elif isinstance(metadata, dict):
-        check_type("metadata_dictionary", metadata, MetadataDict)
+        check_type(metadata, MetadataDict)
         m = Metadata(**metadata)
 
     p = yaml_file if isinstance(yaml_file, Path) else Path(yaml_file)
