@@ -247,7 +247,6 @@ class AutoTokenizer:
     field_tokenizer: DiscreteTokenizer = field(default_factory=DiscreteTokenizer, repr=False)
 
     def __post_init__(self):
-
         self.df = self.df.trim(self.copy)
         self.columns = self.df.columns
         self.column_len = len(self.columns)
@@ -1320,21 +1319,27 @@ class Simulator(gym.Env[np.ndarray, list]):
                 seq = torch.hstack((seq, valid_tokens.tile(beam_width, 1)))
                 continue
 
-            logits = self._gpt_predict(seq, self.tokenizer.block_size)  # shape = (beam_width, vocab_size)
+            logits = self._gpt_predict(
+                seq, self.tokenizer.block_size
+            )  # shape = (beam_width, vocab_size)
             logits = logits[:, valid_tokens]
             logprobs = F.log_softmax(logits, dim=1)
             if accum_logprobs is not None:  # accum_logprobs is None on 1st loop
                 logprobs += accum_logprobs.reshape(-1, 1)
 
             if beam_width > logprobs.numel():
-                raise ValueError(f"beam_width cannot be larger than the vocab size of the starting column. Expect beam_width <= {logprobs.numel()}, got {beam_width}")
+                raise ValueError(
+                    f"beam_width cannot be larger than the vocab size of the starting column. Expect beam_width <= {logprobs.numel()}, got {beam_width}"
+                )
 
             if randomness:
-                top_indices = torch.multinomial(logprobs.flatten().exp(), beam_width, replacement=False)
+                top_indices = torch.multinomial(
+                    logprobs.flatten().exp(), beam_width, replacement=False
+                )
                 accum_logprobs = logprobs.flatten()[top_indices]
             else:
                 accum_logprobs, top_indices = torch.topk(logprobs.flatten(), beam_width)
-            seq_indices = torch.div(top_indices, valid_tokens.size(0), rounding_mode='floor')
+            seq_indices = torch.div(top_indices, valid_tokens.size(0), rounding_mode="floor")
             token_indices = torch.remainder(top_indices, valid_tokens.size(0))
 
             seq = torch.hstack((seq[seq_indices], valid_tokens[token_indices].reshape(-1, 1)))

@@ -519,7 +519,6 @@ def data_generator_simple(
     T2 = np.array([[0.5, 0.5], [0.3, 0.7]])
 
     if markov_order == 0:
-
         wi_df = wi.WiDataFrame(
             pd.DataFrame(np.random.randint(0, 100, size=(100, 4)), columns=list("abcd")),
             states=["a", "b"],
