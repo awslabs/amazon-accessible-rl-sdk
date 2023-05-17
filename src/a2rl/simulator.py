@@ -1296,7 +1296,7 @@ class Simulator(gym.Env[np.ndarray, list]):
             start_col_idx = len(seq) % len(columns)
 
         seq_tensor = torch.tensor(seq, device=self.device).reshape(1, -1)
-        accum_logprobs = torch.empty(0)
+        accum_logprobs = torch.zeros(1, device=self.device)
 
         for step in range(n_steps):
             col_idx = (start_col_idx + step) % len(columns)
@@ -1316,7 +1316,9 @@ class Simulator(gym.Env[np.ndarray, list]):
             valid_tokens = torch.tensor(valid_tokens, device=self.device)
 
             if valid_tokens.size(0) == 1:
-                seq_tensor = torch.hstack((seq_tensor, valid_tokens.tile(beam_width, 1)))
+                seq_tensor = torch.hstack(
+                    (seq_tensor, valid_tokens.tile(seq_tensor.size(0), 1))
+                )
                 continue
 
             logits = self._gpt_predict(
@@ -1324,22 +1326,21 @@ class Simulator(gym.Env[np.ndarray, list]):
             )  # shape = (beam_width, vocab_size)
             logits = logits[:, valid_tokens]
             logprobs = F.log_softmax(logits, dim=1)
-            if accum_logprobs.numel():  # accum_logprobs is None on 1st loop
-                logprobs += accum_logprobs.reshape(-1, 1)
+            accum_logprobs = (logprobs + accum_logprobs.reshape(-1, 1)).flatten()
 
-            if beam_width > logprobs.numel():
+            if beam_width > accum_logprobs.numel():
                 raise ValueError(
                     "beam_width cannot be larger than the vocab size of the starting column. "
-                    f"Expect beam_width <= {logprobs.numel()}, got {beam_width}"
+                    f"Expect beam_width <= {accum_logprobs.numel()}, got {beam_width}"
                 )
 
             if randomness:
                 top_indices = torch.multinomial(
-                    logprobs.flatten().exp(), beam_width, replacement=False
+                    accum_logprobs.exp(), beam_width, replacement=False
                 )
-                accum_logprobs = logprobs.flatten()[top_indices]
+                accum_logprobs = accum_logprobs[top_indices]
             else:
-                accum_logprobs, top_indices = torch.topk(logprobs.flatten(), beam_width)
+                accum_logprobs, top_indices = torch.topk(accum_logprobs, beam_width)
             seq_indices = torch.div(top_indices, valid_tokens.size(0), rounding_mode="floor")
             token_indices = torch.remainder(top_indices, valid_tokens.size(0))
 
@@ -1347,16 +1348,14 @@ class Simulator(gym.Env[np.ndarray, list]):
                 (seq_tensor[seq_indices], valid_tokens[token_indices].reshape(-1, 1))
             )
 
-        seq_tensor, accum_logprobs = seq_tensor.cpu().numpy(), accum_logprobs.cpu().numpy()
+        seq, accum_logprobs = seq_tensor.cpu().numpy(), accum_logprobs.cpu().numpy()
         if not is_gpt_token:
-            seq_tensor = self.tokenizer.gpt_inverse_tokenize(seq_tensor.ravel()).reshape(
-                seq_tensor.shape
-            )
+            seq = self.tokenizer.gpt_inverse_tokenize(seq.ravel()).reshape(seq.shape)
 
         if return_logprobs:
-            return seq_tensor, accum_logprobs
+            return seq, accum_logprobs
 
-        return seq_tensor
+        return seq
 
     def sample(
         self,
