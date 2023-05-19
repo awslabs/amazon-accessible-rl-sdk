@@ -1254,7 +1254,7 @@ class Simulator(gym.Env[np.ndarray, list]):
         n_steps: int,
         beam_width: int,
         randomness: bool = False,
-        overwrite_valid_tokens: dict | None = None,  # {"col_name": [valid tokens], ...}
+        overwrite_valid_tokens: dict[str, list[int]] | None = None,  # {"col_name": [valid tokens], ...}
         start_col_idx: int | None = None,
         is_gpt_token: bool = False,
         return_logprobs: bool = False,
