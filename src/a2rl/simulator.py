@@ -1303,27 +1303,31 @@ class Simulator(gym.Env[np.ndarray, list]):
             col_idx = (start_col_idx + step) % len(columns)
             col_name = columns[col_idx]
             if col_name in overwrite_valid_tokens:
-                valid_tokens = overwrite_valid_tokens[col_name]
+                valid_tokens = np.array(overwrite_valid_tokens[col_name])
 
                 if not is_gpt_token:
                     valid_tokens = self.tokenizer.gpt_tokenize(np.asarray(valid_tokens))
             else:
-                valid_tokens = get_valid_gpt_token_idx(
-                    self.tokenizer._col_eligible_index,
-                    col_idx,
-                    self.tokenizer.simulator_ds,
+                valid_tokens = np.array(
+                    get_valid_gpt_token_idx(
+                        self.tokenizer._col_eligible_index,
+                        col_idx,
+                        self.tokenizer.simulator_ds,
+                    )
                 )
 
-            valid_tokens = torch.tensor(valid_tokens, device=self.device)
+            valid_tokens_tensor = torch.tensor(valid_tokens, device=self.device)
 
-            if valid_tokens.size(0) == 1:
-                seq_tensor = torch.hstack((seq_tensor, valid_tokens.tile(seq_tensor.size(0), 1)))
+            if valid_tokens_tensor.size(0) == 1:
+                seq_tensor = torch.hstack(
+                    (seq_tensor, valid_tokens_tensor.tile(seq_tensor.size(0), 1))
+                )
                 continue
 
             logits = self._gpt_predict(
                 seq_tensor, self.tokenizer.block_size
             )  # shape = (beam_width, vocab_size)
-            logits = logits[:, valid_tokens]
+            logits = logits[:, valid_tokens_tensor]
             logprobs = F.log_softmax(logits, dim=1)
             accum_logprobs = (logprobs + accum_logprobs.reshape(-1, 1)).flatten()
 
@@ -1338,11 +1342,11 @@ class Simulator(gym.Env[np.ndarray, list]):
                 accum_logprobs = accum_logprobs[top_indices]
             else:
                 accum_logprobs, top_indices = torch.topk(accum_logprobs, beam_width)
-            seq_indices = torch.div(top_indices, valid_tokens.size(0), rounding_mode="floor")
-            token_indices = torch.remainder(top_indices, valid_tokens.size(0))
+            seq_indices = torch.div(top_indices, valid_tokens_tensor.size(0), rounding_mode="floor")
+            token_indices = torch.remainder(top_indices, valid_tokens_tensor.size(0))
 
             seq_tensor = torch.hstack(
-                (seq_tensor[seq_indices], valid_tokens[token_indices].reshape(-1, 1))
+                (seq_tensor[seq_indices], valid_tokens_tensor[token_indices].reshape(-1, 1))
             )
 
         seq, accum_logprobs = seq_tensor.cpu().numpy(), accum_logprobs.cpu().numpy()
