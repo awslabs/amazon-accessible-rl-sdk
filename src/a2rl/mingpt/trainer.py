@@ -76,7 +76,6 @@ class Trainer:
             losses = []
             pbar = tqdm(enumerate(loader), total=len(loader)) if is_train else enumerate(loader)
             for it, (x, y) in pbar:
-
                 # place data on the correct device
                 x = x.to(self.device)
                 y = y.to(self.device)
@@ -88,7 +87,6 @@ class Trainer:
                     losses.append(loss.item())
 
                 if is_train:
-
                     # backprop and update the parameters
                     model.zero_grad()
                     loss.backward()
@@ -128,7 +126,6 @@ class Trainer:
         best_loss = float("inf")
         self.tokens = 0  # counter used for learning rate decay
         for epoch in range(config.max_epochs):
-
             run_epoch("train")
             if self.test_dataset is not None:
                 test_loss = run_epoch("test")

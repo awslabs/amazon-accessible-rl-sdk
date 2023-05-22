@@ -785,7 +785,7 @@ def test_sim_beam_search_n_steps(sim: Simulator, start_col_index, gpt_token_cont
     )
 
     # Test overwrite_valid_tokens and return_logprobs
-    overwrite_valid_tokens = ({"A1": [15]},)
+    overwrite_valid_tokens = {"A1": [15]}
     result, accum_logprobs = sim.beam_search_n_steps(
         gpt_token_context,
         NUM_STEP,

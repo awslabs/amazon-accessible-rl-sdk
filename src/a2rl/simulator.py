@@ -247,7 +247,6 @@ class AutoTokenizer:
     field_tokenizer: DiscreteTokenizer = field(default_factory=DiscreteTokenizer, repr=False)
 
     def __post_init__(self):
-
         self.df = self.df.trim(self.copy)
         self.columns = self.df.columns
         self.column_len = len(self.columns)
@@ -1249,14 +1248,15 @@ class Simulator(gym.Env[np.ndarray, list]):
         return np.array([valid_token[i] for i in neighbors_idx.ravel()])
 
     @torch.no_grad()
-    def beam_search_n_steps(
+    def beam_search_n_steps(  # noqa: C901
         self,
         seq: np.ndarray,
         n_steps: int,
         beam_width: int,
         randomness: bool = False,
-        overwrite_valid_tokens: dict = None,  # {"col_name": [valid tokens], ...}
-        start_col_idx: int = None,
+        overwrite_valid_tokens: dict[str, list[int]]
+        | None = None,  # {"col_name": [valid tokens], ...}
+        start_col_idx: int | None = None,
         is_gpt_token: bool = False,
         return_logprobs: bool = False,
     ):
@@ -1296,50 +1296,60 @@ class Simulator(gym.Env[np.ndarray, list]):
         if start_col_idx is None:  # assume seq is in SARSAR... format
             start_col_idx = len(seq) % len(columns)
 
-        seq = torch.tensor(seq, device=self.device).reshape(1, -1)
-        accum_logprobs = None
+        seq_tensor = torch.tensor(seq, device=self.device).reshape(1, -1)
+        accum_logprobs = torch.zeros(1, device=self.device)
 
         for step in range(n_steps):
             col_idx = (start_col_idx + step) % len(columns)
             col_name = columns[col_idx]
             if col_name in overwrite_valid_tokens:
-                valid_tokens = overwrite_valid_tokens[col_name]
+                valid_tokens = np.array(overwrite_valid_tokens[col_name])
 
                 if not is_gpt_token:
                     valid_tokens = self.tokenizer.gpt_tokenize(np.asarray(valid_tokens))
             else:
-                valid_tokens = get_valid_gpt_token_idx(
-                    self.tokenizer._col_eligible_index,
-                    col_idx,
-                    self.tokenizer.simulator_ds,
+                valid_tokens = np.array(
+                    get_valid_gpt_token_idx(
+                        self.tokenizer._col_eligible_index,
+                        col_idx,
+                        self.tokenizer.simulator_ds,
+                    )
                 )
 
-            valid_tokens = torch.tensor(valid_tokens, device=self.device)
+            valid_tokens_tensor = torch.tensor(valid_tokens, device=self.device)
 
-            if valid_tokens.size(0) == 1:
-                seq = torch.hstack((seq, valid_tokens.tile(beam_width, 1)))
+            if valid_tokens_tensor.size(0) == 1:
+                seq_tensor = torch.hstack(
+                    (seq_tensor, valid_tokens_tensor.tile(seq_tensor.size(0), 1))
+                )
                 continue
 
-            logits = self._gpt_predict(seq, self.tokenizer.block_size)  # shape = (beam_width, vocab_size)
-            logits = logits[:, valid_tokens]
+            logits = self._gpt_predict(
+                seq_tensor, self.tokenizer.block_size
+            )  # shape = (beam_width, vocab_size)
+            logits = logits[:, valid_tokens_tensor]
             logprobs = F.log_softmax(logits, dim=1)
-            if accum_logprobs is not None:  # accum_logprobs is None on 1st loop
-                logprobs += accum_logprobs.reshape(-1, 1)
+            accum_logprobs = (logprobs + accum_logprobs.reshape(-1, 1)).flatten()
 
-            if beam_width > logprobs.numel():
-                raise ValueError(f"beam_width cannot be larger than the vocab size of the starting column. Expect beam_width <= {logprobs.numel()}, got {beam_width}")
+            if beam_width > accum_logprobs.numel():
+                raise ValueError(
+                    "beam_width cannot be larger than the vocab size of the starting column. "
+                    f"Expect beam_width <= {accum_logprobs.numel()}, got {beam_width}"
+                )
 
             if randomness:
-                top_indices = torch.multinomial(logprobs.flatten().exp(), beam_width, replacement=False)
-                accum_logprobs = logprobs.flatten()[top_indices]
+                top_indices = torch.multinomial(accum_logprobs.exp(), beam_width, replacement=False)
+                accum_logprobs = accum_logprobs[top_indices]
             else:
-                accum_logprobs, top_indices = torch.topk(logprobs.flatten(), beam_width)
-            seq_indices = torch.div(top_indices, valid_tokens.size(0), rounding_mode='floor')
-            token_indices = torch.remainder(top_indices, valid_tokens.size(0))
+                accum_logprobs, top_indices = torch.topk(accum_logprobs, beam_width)
+            seq_indices = torch.div(top_indices, valid_tokens_tensor.size(0), rounding_mode="floor")
+            token_indices = torch.remainder(top_indices, valid_tokens_tensor.size(0))
 
-            seq = torch.hstack((seq[seq_indices], valid_tokens[token_indices].reshape(-1, 1)))
+            seq_tensor = torch.hstack(
+                (seq_tensor[seq_indices], valid_tokens_tensor[token_indices].reshape(-1, 1))
+            )
 
-        seq, accum_logprobs = seq.cpu().numpy(), accum_logprobs.cpu().numpy()
+        seq, accum_logprobs = seq_tensor.cpu().numpy(), accum_logprobs.cpu().numpy()
         if not is_gpt_token:
             seq = self.tokenizer.gpt_inverse_tokenize(seq.ravel()).reshape(seq.shape)
 
