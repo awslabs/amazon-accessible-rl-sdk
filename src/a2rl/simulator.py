@@ -1254,7 +1254,8 @@ class Simulator(gym.Env[np.ndarray, list]):
         n_steps: int,
         beam_width: int,
         randomness: bool = False,
-        overwrite_valid_tokens: dict[str, list[int]] | None = None,  # {"col_name": [valid tokens], ...}
+        overwrite_valid_tokens: dict[str, list[int]]
+        | None = None,  # {"col_name": [valid tokens], ...}
         start_col_idx: int | None = None,
         is_gpt_token: bool = False,
         return_logprobs: bool = False,
@@ -1316,9 +1317,7 @@ class Simulator(gym.Env[np.ndarray, list]):
             valid_tokens = torch.tensor(valid_tokens, device=self.device)
 
             if valid_tokens.size(0) == 1:
-                seq_tensor = torch.hstack(
-                    (seq_tensor, valid_tokens.tile(seq_tensor.size(0), 1))
-                )
+                seq_tensor = torch.hstack((seq_tensor, valid_tokens.tile(seq_tensor.size(0), 1)))
                 continue
 
             logits = self._gpt_predict(
@@ -1335,9 +1334,7 @@ class Simulator(gym.Env[np.ndarray, list]):
                 )
 
             if randomness:
-                top_indices = torch.multinomial(
-                    accum_logprobs.exp(), beam_width, replacement=False
-                )
+                top_indices = torch.multinomial(accum_logprobs.exp(), beam_width, replacement=False)
                 accum_logprobs = accum_logprobs[top_indices]
             else:
                 accum_logprobs, top_indices = torch.topk(accum_logprobs, beam_width)
